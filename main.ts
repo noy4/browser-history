@@ -1,7 +1,7 @@
 import { format, startOfDay } from 'date-fns';
 import * as fs from 'fs';
 import { App, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
-import initSqlJs, { SqlValue } from 'sql.js';
+import initSqlJs, { QueryExecResult, SqlValue } from 'sql.js';
 
 // @ts-ignore
 import sqlWasm from './node_modules/sql.js/dist/sql-wasm.wasm';
@@ -59,10 +59,23 @@ export default class BrowserHistoryPlugin extends Plugin {
 			order by id desc
 			limit 50
 		`)
+		const records = toRecords(results[0])
 
-		const dayMap = new Map<number, SqlValue[][]>()
-		for (const row of results[0].values) {
-			const [, , last_visit_time] = row
+		function toRecords(
+			result: QueryExecResult
+		): Record<string, SqlValue>[] {
+			const { columns, values } = result
+			return values.map((row) =>
+				Object.assign({},
+					...row.map((value, index) => ({
+						[columns[index]]: value
+					})))
+			)
+		}
+
+		const dayMap = new Map<number, Record<string, SqlValue>[]>()
+		for (const row of records) {
+			const { last_visit_time } = row
 			const date = new Date(Number(last_visit_time))
 			const day = startOfDay(date).getTime()
 			const dayMapValue = dayMap.get(day) || []
@@ -71,12 +84,13 @@ export default class BrowserHistoryPlugin extends Plugin {
 		}
 
 		const summary = [
-			`total: ${results[0].values.length}`,
+			`total: ${records.length}`,
 		].join('\n')
+
 		const body = [...dayMap].map(([day, rows]) => {
 			const formattedDate = format(new Date(Number(day)), 'M/d')
 			const formattedRows = rows.map(row => {
-				const [title, url] = row
+				const { title, url } = row
 				return `- [${title}](${url})`
 			})
 			return `## ${formattedDate}\n${formattedRows.join('\n')}`
