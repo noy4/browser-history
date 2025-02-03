@@ -1,10 +1,10 @@
+import { format } from 'date-fns';
 import * as fs from 'fs';
-import { App, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 import initSqlJs from 'sql.js';
+
 // @ts-ignore
 import sqlWasm from './node_modules/sql.js/dist/sql-wasm.wasm';
-
-// Remember to rename these classes and interfaces!
 
 interface BrowserHistoryPluginSettings {
 	mySetting: string;
@@ -14,35 +14,58 @@ const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
 	mySetting: 'default'
 }
 
+// last_visit_time is in microseconds since 1601-01-01T00:00:00Z
+// [sqlite - What is the format of Chrome's timestamps? - Stack Overflow](https://stackoverflow.com/questions/20458406/what-is-the-format-of-chromes-timestamps)
+const epoch1970 = new Date('1970-01-01T00:00:00Z');
+const epoch1601 = new Date('1601-01-01T00:00:00Z');
+const UNIX_EPOCH_OFFSET = epoch1970.getTime() - epoch1601.getTime(); // 11644473600000
+
 export default class BrowserHistoryPlugin extends Plugin {
 	settings: BrowserHistoryPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
 
-		const dbPath = '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History';
-		const SQL = await initSqlJs({ wasmBinary: sqlWasm })
-
-		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-
-
-			const dbBuffer = fs.readFileSync(dbPath);
-			const db = new SQL.Database(dbBuffer);
-			const res = db.exec('select * from urls limit 10')[0]
-			console.log('res:', res)
+			this.createBrowserHistoryNote()
 		});
 
 		this.addSettingTab(new SampleSettingTab(this.app, this));
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
-	onunload() {
+	async createBrowserHistoryNote() {
+		const SQL = await initSqlJs({ wasmBinary: sqlWasm })
+		const dbPath = '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History';
+		const dbBuffer = fs.readFileSync(dbPath);
+		const db = new SQL.Database(dbBuffer);
 
+		// urls
+		// "id"
+		// "url"
+		// "title"
+		// "visit_count"
+		// "typed_count"
+		// "last_visit_time"
+		// "hidden"
+		const rows = db.exec('select title, url, last_visit_time from urls order by id desc limit 50')[0].values
+		const formattedRows = rows.map(row => {
+			const [title, url, last_visit_time] = row
+			const date = new Date((Number(last_visit_time) / 1000) - UNIX_EPOCH_OFFSET)
+			const formatString = 'HH:mm'
+			const formattedDate = format(date, formatString)
+			return `${formattedDate} [${title}](${url})`
+		})
+		const content = formattedRows.join('\n') + '\n'
+		const noteTitle = 'Browser History.md'
+
+		const browserHistoryNote = this.app.vault.getAbstractFileByPath(noteTitle)
+		if (!browserHistoryNote) {
+			this.app.vault.create(noteTitle, content)
+		} else {
+			this.app.vault.modify(browserHistoryNote as TFile, content)
+		}
 	}
 
 	async loadSettings() {
