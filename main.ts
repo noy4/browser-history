@@ -1,7 +1,7 @@
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import * as fs from 'fs';
-import { App, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
-import initSqlJs from 'sql.js';
+import { App, Notice, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import initSqlJs, { SqlValue } from 'sql.js';
 
 // @ts-ignore
 import sqlWasm from './node_modules/sql.js/dist/sql-wasm.wasm';
@@ -49,23 +49,51 @@ export default class BrowserHistoryPlugin extends Plugin {
 		// "typed_count"
 		// "last_visit_time"
 		// "hidden"
-		const rows = db.exec('select title, url, last_visit_time from urls order by id desc limit 50')[0].values
-		const formattedRows = rows.map(row => {
-			const [title, url, last_visit_time] = row
-			const date = new Date((Number(last_visit_time) / 1000) - UNIX_EPOCH_OFFSET)
-			const formatString = 'HH:mm'
-			const formattedDate = format(date, formatString)
-			return `${formattedDate} [${title}](${url})`
-		})
-		const content = formattedRows.join('\n') + '\n'
-		const noteTitle = 'Browser History.md'
 
-		const browserHistoryNote = this.app.vault.getAbstractFileByPath(noteTitle)
-		if (!browserHistoryNote) {
-			this.app.vault.create(noteTitle, content)
-		} else {
-			this.app.vault.modify(browserHistoryNote as TFile, content)
+		const results = db.exec(`
+			select
+				title,
+				url,
+				(last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
+			from urls
+			order by id desc
+			limit 50
+		`)
+
+		const dayMap = new Map<number, SqlValue[][]>()
+		for (const row of results[0].values) {
+			const [, , last_visit_time] = row
+			const date = new Date(Number(last_visit_time))
+			const day = startOfDay(date).getTime()
+			const dayMapValue = dayMap.get(day) || []
+			dayMapValue.push(row)
+			dayMap.set(day, dayMapValue)
 		}
+
+		const summary = [
+			`total: ${results[0].values.length}`,
+		].join('\n')
+		const body = [...dayMap].map(([day, rows]) => {
+			const formattedDate = format(new Date(Number(day)), 'M/d')
+			const formattedRows = rows.map(row => {
+				const [title, url] = row
+				return `- [${title}](${url})`
+			})
+			return `## ${formattedDate}\n${formattedRows.join('\n')}`
+		}).join('\n\n')
+
+		const content = [summary, body].join('\n\n')
+		const path = 'Browser History.md'
+		this.upsertFile(path, content)
+		new Notice('Browser history note created!')
+	}
+
+	upsertFile(path: string, data: string) {
+		const file = this.app.vault.getAbstractFileByPath(path)
+		if (!file)
+			this.app.vault.create(path, data)
+		else
+			this.app.vault.modify(file as TFile, data)
 	}
 
 	async loadSettings() {

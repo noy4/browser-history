@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"date-fns": "^4.1.0",
+		"kysely": "^0.27.5",
 		"sql.js": "^1.12.0"
 	}
 }
