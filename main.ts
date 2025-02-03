@@ -97,17 +97,31 @@ export default class BrowserHistoryPlugin extends Plugin {
 		}).join('\n\n')
 
 		const content = [summary, body].join('\n\n')
-		const path = 'Browser History.md'
-		this.upsertFile(path, content)
+		const title = format(new Date(), 'yyyy-MM-dd')
+		const folderPath = 'Browser History'
+		const path = `${folderPath}/${title}.md`
+
+		await this.upsertFile(path, content)
 		new Notice('Browser history note created!')
 	}
 
-	upsertFile(path: string, data: string) {
+	async upsertFile(path: string, data: string) {
+		const paths = path.split('/')
+		const fileName = paths.pop()
+		const folderPath = paths.join('/')
+
+		// create folder if it doesn't exist
+		if (folderPath) {
+			const folder = this.app.vault.getFolderByPath(folderPath)
+			if (!folder)
+				await this.app.vault.createFolder(folderPath)
+		}
+
 		const file = this.app.vault.getAbstractFileByPath(path)
 		if (!file)
-			this.app.vault.create(path, data)
+			await this.app.vault.create(path, data)
 		else
-			this.app.vault.modify(file as TFile, data)
+			await this.app.vault.modify(file as TFile, data)
 	}
 
 	async loadSettings() {
