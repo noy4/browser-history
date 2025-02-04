@@ -1,10 +1,12 @@
 import { BrowserHistory } from 'browser-history';
+import { format, startOfMonth } from 'date-fns';
 import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 interface BrowserHistoryPluginSettings {
 	mySetting: string;
 	sqlitePath: string;
 	folderPath: string;
+	fromDate?: string;
 }
 
 const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
@@ -21,7 +23,7 @@ export default class BrowserHistoryPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addRibbonIcon('history', 'Open browser history', (evt: MouseEvent) => {
-			this.browserHistory.createBrowserHistoryNote()
+			this.browserHistory.createNote()
 		});
 
 		this.addSettingTab(new BrowserHistorySettingTab(this.app, this));
@@ -63,7 +65,7 @@ class BrowserHistorySettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Sqlite path')
-			.setDesc('Path to the browser history sqlite database')
+			.setDesc('Path to the browser history sqlite database. ex. /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
 			.addText(text => text
 				.setPlaceholder('Enter the path to the sqlite database')
 				.setValue(this.plugin.settings.sqlitePath)
@@ -84,5 +86,24 @@ class BrowserHistorySettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		new Setting(containerEl)
+			.setName('Create notes')
+			.setDesc('Create history notes from the specified date. Leave blank to create notes for all history')
+			.addText(text => text
+				.setPlaceholder('Example: 2025-01-01')
+				.setValue(this.plugin.settings.fromDate || format(startOfMonth(new Date()), 'yyyy-MM-dd'))
+				.onChange(async (value) => {
+					this.plugin.settings.fromDate = value;
+					await this.plugin.saveSettings();
+				})
+			)
+			.addButton(button => button
+				.setButtonText('Create notes')
+				.setCta()
+				.onClick(async () => {
+					this.plugin.browserHistory.createNotes()
+				})
+			)
 	}
 }

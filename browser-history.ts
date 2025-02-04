@@ -1,4 +1,4 @@
-import { format, startOfDay } from 'date-fns';
+import { addMonths, format, startOfDay, startOfMonth, subMonths } from 'date-fns';
 import * as fs from 'fs';
 import BrowserHistoryPlugin from 'main';
 import { App, Notice, TFile } from 'obsidian';
@@ -6,6 +6,15 @@ import initSqlJs, { QueryExecResult, SqlValue } from 'sql.js';
 
 // @ts-ignore
 import sqlWasm from './node_modules/sql.js/dist/sql-wasm.wasm';
+
+// urls
+// "id"
+// "url"
+// "title"
+// "visit_count"
+// "typed_count"
+// "last_visit_time"
+// "hidden"
 
 // last_visit_time is in microseconds since 1601-01-01T00:00:00Z
 // [sqlite - What is the format of Chrome's timestamps? - Stack Overflow](https://stackoverflow.com/questions/20458406/what-is-the-format-of-chromes-timestamps)
@@ -25,6 +34,10 @@ function toRecords(
   )
 }
 
+function log(message: string) {
+  console.log(`[Browser History] ${message}`)
+}
+
 export class BrowserHistory {
   plugin: BrowserHistoryPlugin
   app: App
@@ -34,30 +47,66 @@ export class BrowserHistory {
     this.app = plugin.app;
   }
 
-  async createBrowserHistoryNote() {
+  async createNotes() {
+    const thisMonth = startOfMonth(new Date())
+    const settingFromDate = this.plugin.settings.fromDate
+      ? new Date(this.plugin.settings.fromDate + ' 00:00:00')
+      : thisMonth
+    const monthDiff = thisMonth.getMonth() - settingFromDate.getMonth()
+
+    for (const i of Array(monthDiff + 1).keys()) {
+      const fromDate = subMonths(thisMonth, i)
+      const toDate = addMonths(fromDate, 1)
+      await this.createNote({ fromDate, toDate, skipIfExists: true })
+    }
+  }
+
+  async createNote(params?: {
+    fromDate?: Date,
+    toDate?: Date,
+    skipIfExists?: boolean,
+  }) {
     try {
+      const {
+        fromDate = startOfMonth(new Date()),
+        toDate,
+        skipIfExists
+      } = params || {}
+
       const SQL = await initSqlJs({ wasmBinary: sqlWasm })
       const dbBuffer = fs.readFileSync(this.plugin.settings.sqlitePath);
       const db = new SQL.Database(dbBuffer);
 
-      // urls
-      // "id"
-      // "url"
-      // "title"
-      // "visit_count"
-      // "typed_count"
-      // "last_visit_time"
-      // "hidden"
+      const title = format(fromDate, 'yyyy-MM')
+      const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
+      log(`create note: ${path}`)
 
-      const results = db.exec(`
+      if (skipIfExists && this.app.vault.getAbstractFileByPath(path)) {
+        log(`skip creating note: ${path}`)
+        return
+      }
+
+      const condition = [
+        fromDate && `${fromDate.getTime()} <= last_visit_time`,
+        toDate && `last_visit_time < ${toDate.getTime()}`,
+      ].filter(Boolean).join(' and ') || 'true'
+
+      const query = `
         select
           *,
           (last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
         from urls
+        where ${condition}
         order by id desc
         limit 50
-      `)
-      const records = toRecords(results[0])
+      `
+      const results = db.exec(query)
+      const records = results.map(toRecords)[0] || []
+
+      if (records.length === 0) {
+        log(`no records found for ${title}`)
+        return
+      }
 
       const dayMap = new Map<number, Record<string, SqlValue>[]>()
       for (const row of records) {
@@ -73,17 +122,11 @@ export class BrowserHistory {
         const formattedDate = format(new Date(Number(day)), 'M/d')
         const formattedRows = rows.map(row => {
           const { title, url, last_visit_time } = row
-          const date = format(new Date(Number(last_visit_time)), 'HH:mm')
-          return `- ${date} [${title}](${url})`
+          const timestamp = format(new Date(Number(last_visit_time)), 'HH:mm')
+          return `- ${timestamp} [${title}](${url})`
         })
         return `## ${formattedDate}\n${formattedRows.join('\n')}`
       }).join('\n\n')
-
-      const title = format(new Date(), 'yyyy-MM')
-      const path = [
-        this.plugin.settings.folderPath,
-        `${title}.md`
-      ].join('/')
 
       await this.upsertFile(path, content)
       new Notice('Browser history note created!')
