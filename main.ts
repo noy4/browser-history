@@ -16,11 +16,11 @@ export default class BrowserHistoryPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
+		this.addRibbonIcon('history', 'Open browser history', (evt: MouseEvent) => {
 			this.browserHistory.createBrowserHistoryNote()
 		});
 
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new BrowserHistorySettingTab(this.app, this));
 		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 	}
 
@@ -33,7 +33,7 @@ export default class BrowserHistoryPlugin extends Plugin {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
+class BrowserHistorySettingTab extends PluginSettingTab {
 	plugin: BrowserHistoryPlugin;
 
 	constructor(app: App, plugin: BrowserHistoryPlugin) {
