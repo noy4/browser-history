@@ -80,8 +80,10 @@ export class BrowserHistory {
       }).join('\n\n')
 
       const title = format(new Date(), 'yyyy-MM')
-      const folderPath = 'Browser History'
-      const path = `${folderPath}/${title}.md`
+      const path = [
+        this.plugin.settings.folderPath,
+        `${title}.md`
+      ].join('/')
 
       await this.upsertFile(path, content)
       new Notice('Browser history note created!')

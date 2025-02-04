@@ -4,11 +4,13 @@ import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 interface BrowserHistoryPluginSettings {
 	mySetting: string;
 	sqlitePath: string;
+	folderPath: string;
 }
 
 const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
 	mySetting: 'default',
-	sqlitePath: '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History'
+	sqlitePath: '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History',
+	folderPath: 'Browser History',
 }
 
 export default class BrowserHistoryPlugin extends Plugin {
@@ -69,6 +71,18 @@ class BrowserHistorySettingTab extends PluginSettingTab {
 					this.plugin.settings.sqlitePath = value;
 					await this.plugin.saveSettings();
 				})
-			)
+			);
+
+		new Setting(containerEl)
+			.setName('Folder path')
+			.setDesc('Path to the folder where the browser history notes will be created')
+			.addText(text => text
+				.setPlaceholder('Enter the path to the folder')
+				.setValue(this.plugin.settings.folderPath)
+				.onChange(async (value) => {
+					this.plugin.settings.folderPath = value;
+					await this.plugin.saveSettings();
+				})
+			);
 	}
 }
