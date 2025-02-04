@@ -51,8 +51,7 @@ export class BrowserHistory {
 
       const results = db.exec(`
         select
-          title,
-          url,
+          *,
           (last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
         from urls
         order by id desc
@@ -70,24 +69,17 @@ export class BrowserHistory {
         dayMap.set(day, dayMapValue)
       }
 
-      const summary = [
-        `total: ${records.length}`,
-      ].join('\n')
-
-      const body = [...dayMap].map(([day, rows]) => {
+      const content = [...dayMap].map(([day, rows]) => {
         const formattedDate = format(new Date(Number(day)), 'M/d')
         const formattedRows = rows.map(row => {
-          const { title, url } = row
-          return `- [${title}](${url})`
+          const { title, url, last_visit_time } = row
+          const date = format(new Date(Number(last_visit_time)), 'HH:mm')
+          return `- ${date} [${title}](${url})`
         })
         return `## ${formattedDate}\n${formattedRows.join('\n')}`
       }).join('\n\n')
 
-      const content = [
-        // summary,
-        body
-      ].join('\n\n')
-      const title = format(new Date(), 'yyyy-MM-dd')
+      const title = format(new Date(), 'yyyy-MM')
       const folderPath = 'Browser History'
       const path = `${folderPath}/${title}.md`
 
