@@ -3,10 +3,12 @@ import { App, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 interface BrowserHistoryPluginSettings {
 	mySetting: string;
+	sqlitePath: string;
 }
 
 const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
-	mySetting: 'default'
+	mySetting: 'default',
+	sqlitePath: '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History'
 }
 
 export default class BrowserHistoryPlugin extends Plugin {
@@ -56,5 +58,17 @@ class BrowserHistorySettingTab extends PluginSettingTab {
 					this.plugin.settings.mySetting = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Sqlite path')
+			.setDesc('Path to the browser history sqlite database')
+			.addText(text => text
+				.setPlaceholder('Enter the path to the sqlite database')
+				.setValue(this.plugin.settings.sqlitePath)
+				.onChange(async (value) => {
+					this.plugin.settings.sqlitePath = value;
+					await this.plugin.saveSettings();
+				})
+			)
 	}
 }

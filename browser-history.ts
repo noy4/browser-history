@@ -35,64 +35,67 @@ export class BrowserHistory {
   }
 
   async createBrowserHistoryNote() {
-    const SQL = await initSqlJs({ wasmBinary: sqlWasm })
-    const dbPath = '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History';
-    const dbBuffer = fs.readFileSync(dbPath);
-    const db = new SQL.Database(dbBuffer);
+    try {
+      const SQL = await initSqlJs({ wasmBinary: sqlWasm })
+      const dbBuffer = fs.readFileSync(this.plugin.settings.sqlitePath);
+      const db = new SQL.Database(dbBuffer);
 
-    // urls
-    // "id"
-    // "url"
-    // "title"
-    // "visit_count"
-    // "typed_count"
-    // "last_visit_time"
-    // "hidden"
+      // urls
+      // "id"
+      // "url"
+      // "title"
+      // "visit_count"
+      // "typed_count"
+      // "last_visit_time"
+      // "hidden"
 
-    const results = db.exec(`
-			select
-				title,
-				url,
-				(last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
-			from urls
-			order by id desc
-			limit 50
-		`)
-    const records = toRecords(results[0])
+      const results = db.exec(`
+        select
+          title,
+          url,
+          (last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
+        from urls
+        order by id desc
+        limit 50
+      `)
+      const records = toRecords(results[0])
 
-    const dayMap = new Map<number, Record<string, SqlValue>[]>()
-    for (const row of records) {
-      const { last_visit_time } = row
-      const date = new Date(Number(last_visit_time))
-      const day = startOfDay(date).getTime()
-      const dayMapValue = dayMap.get(day) || []
-      dayMapValue.push(row)
-      dayMap.set(day, dayMapValue)
+      const dayMap = new Map<number, Record<string, SqlValue>[]>()
+      for (const row of records) {
+        const { last_visit_time } = row
+        const date = new Date(Number(last_visit_time))
+        const day = startOfDay(date).getTime()
+        const dayMapValue = dayMap.get(day) || []
+        dayMapValue.push(row)
+        dayMap.set(day, dayMapValue)
+      }
+
+      const summary = [
+        `total: ${records.length}`,
+      ].join('\n')
+
+      const body = [...dayMap].map(([day, rows]) => {
+        const formattedDate = format(new Date(Number(day)), 'M/d')
+        const formattedRows = rows.map(row => {
+          const { title, url } = row
+          return `- [${title}](${url})`
+        })
+        return `## ${formattedDate}\n${formattedRows.join('\n')}`
+      }).join('\n\n')
+
+      const content = [
+        // summary,
+        body
+      ].join('\n\n')
+      const title = format(new Date(), 'yyyy-MM-dd')
+      const folderPath = 'Browser History'
+      const path = `${folderPath}/${title}.md`
+
+      await this.upsertFile(path, content)
+      new Notice('Browser history note created!')
+    } catch (e) {
+      new Notice(`[Browser History] ${e}`)
     }
-
-    const summary = [
-      `total: ${records.length}`,
-    ].join('\n')
-
-    const body = [...dayMap].map(([day, rows]) => {
-      const formattedDate = format(new Date(Number(day)), 'M/d')
-      const formattedRows = rows.map(row => {
-        const { title, url } = row
-        return `- [${title}](${url})`
-      })
-      return `## ${formattedDate}\n${formattedRows.join('\n')}`
-    }).join('\n\n')
-
-    const content = [
-      // summary,
-      body
-    ].join('\n\n')
-    const title = format(new Date(), 'yyyy-MM-dd')
-    const folderPath = 'Browser History'
-    const path = `${folderPath}/${title}.md`
-
-    await this.upsertFile(path, content)
-    new Notice('Browser history note created!')
   }
 
   async upsertFile(path: string, data: string) {
