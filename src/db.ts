@@ -15,11 +15,29 @@ import sqlWasm from '../node_modules/sql.js/dist/sql-wasm.wasm'
 // "last_visit_time"
 // "hidden"
 
-// last_visit_time is in microseconds since 1601-01-01T00:00:00Z
-// [sqlite - What is the format of Chrome's timestamps? - Stack Overflow](https://stackoverflow.com/questions/20458406/what-is-the-format-of-chromes-timestamps)
-const epoch1970 = new Date('1970-01-01T00:00:00Z')
-const epoch1601 = new Date('1601-01-01T00:00:00Z')
-const UNIX_EPOCH_OFFSET = epoch1970.getTime() - epoch1601.getTime() // 11644473600000
+/**
+ * Calculates the Unix epoch offset in milliseconds.
+ *
+ * ref. [sqlite - What is the format of Chrome's timestamps? - Stack Overflow](https://stackoverflow.com/questions/20458406/what-is-the-format-of-chromes-timestamps)
+ *
+ * @returns {number} The Unix epoch offset.
+ */
+function getUnixEpochOffset() {
+  const epoch1970 = new Date('1970-01-01T00:00:00Z')
+  const epoch1601 = new Date('1601-01-01T00:00:00Z')
+  return epoch1970.getTime() - epoch1601.getTime() // 11644473600000
+}
+
+const UNIX_EPOCH_OFFSET = getUnixEpochOffset()
+
+/**
+ * Converts a Chrome timestamp (microseconds since 1601-01-01) to a Unix timestamp (milliseconds since 1970-01-01).
+ * @param {number} chromeTimestamp The Chrome timestamp in microseconds.
+ * @returns {number} The Unix timestamp in milliseconds.
+ */
+function chromeTimeToUnixTime(chromeTimestamp: number) {
+  return chromeTimestamp / 1000 - UNIX_EPOCH_OFFSET
+}
 
 function toRecords(
   result: QueryExecResult,
@@ -33,8 +51,8 @@ function toRecords(
 }
 
 interface GetUrlsParams {
-  fromDate?: Date
-  toDate?: Date
+  fromDate: Date
+  toDate: Date
 }
 
 interface SqlJsOptions {
@@ -52,29 +70,24 @@ export class DBClient {
     const SQL = await initSqlJs({ wasmBinary: sqlWasm })
     const dbBuffer = fs.readFileSync(options.sqlitePath)
     const db = new SQL.Database(dbBuffer)
+    db.create_function('unix', chromeTimeToUnixTime)
     return new DBClient(db)
   }
 
-  getUrls(params?: GetUrlsParams) {
-    console.log('params:', params)
-    const { fromDate, toDate } = params || {}
-    const condition = [
-      fromDate && `${fromDate.getTime()} <= last_visit_time`,
-      toDate && `last_visit_time < ${toDate.getTime()}`,
-    ].filter(Boolean).join(' and ') || 'true'
+  getUrls(params: GetUrlsParams) {
+    const { fromDate, toDate } = params
 
     const query = `
       select
         *,
-        (last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
+        unix(last_visit_time) as last_visit_time
       from urls
-      where ${condition}
-      order by id desc
-      limit 50
+      where ${fromDate.getTime()} <= unix(last_visit_time)
+        and unix(last_visit_time) < ${toDate.getTime()}
+      order by last_visit_time desc
     `
     const results = this.db.exec(query)
     const records = results.map(toRecords)[0] || []
-    console.log(query, records)
     return records
   }
 }

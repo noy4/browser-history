@@ -25,7 +25,7 @@ export default class BrowserHistoryPlugin extends Plugin {
     await this.browserHistory.onload()
 
     this.addRibbonIcon('history', 'Open browser history', () => {
-      this.browserHistory.createDailyNote()
+      this.browserHistory.createDailyNote({ overwrite: true })
     })
 
     this.addSettingTab(new BrowserHistorySettingTab(this.app, this))

@@ -91,7 +91,7 @@ export class BrowserHistory {
 
     const content = records.map((v) => {
       const timestamp = format(new Date(v.last_visit_time as number), 'HH:mm')
-      return `- ${timestamp} [${v.title}] ${v.url}`
+      return `- ${timestamp} [${v.title}](${v.url})`
     }).join('\n')
 
     await this.upsertFile(path, content)
