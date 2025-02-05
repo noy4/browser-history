@@ -1,5 +1,5 @@
 import type { App } from 'obsidian'
-import { format, startOfMonth } from 'date-fns'
+import { format, startOfToday } from 'date-fns'
 import { Plugin, PluginSettingTab, Setting } from 'obsidian'
 import { BrowserHistory } from './browser-history'
 
@@ -59,10 +59,10 @@ class BrowserHistorySettingTab extends PluginSettingTab {
     containerEl.empty()
 
     new Setting(containerEl)
-      .setName('Sqlite path')
+      .setName('Sqlite location')
       .setDesc('Path to the browser history sqlite database. ex. /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
       .addText(text => text
-        .setPlaceholder('Enter the path to the sqlite database')
+        .setPlaceholder('Example: /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
         .setValue(this.plugin.settings.sqlitePath)
         .onChange(async (value) => {
           this.plugin.settings.sqlitePath = value
@@ -71,10 +71,10 @@ class BrowserHistorySettingTab extends PluginSettingTab {
       )
 
     new Setting(containerEl)
-      .setName('Folder path')
-      .setDesc('Path to the folder where the browser history notes will be created')
+      .setName('New file location')
+      .setDesc('New history notes will be placed here.')
       .addText(text => text
-        .setPlaceholder('Enter the path to the folder')
+        .setPlaceholder('Example: Browser History')
         .setValue(this.plugin.settings.folderPath)
         .onChange(async (value) => {
           this.plugin.settings.folderPath = value
@@ -82,12 +82,16 @@ class BrowserHistorySettingTab extends PluginSettingTab {
         }),
       )
 
+    const record = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
+    const oldestDate = record
+      ? format(new Date(record.last_visit_time as number), 'yyyy-MM-dd')
+      : '-'
     new Setting(containerEl)
       .setName('Create notes')
-      .setDesc('Create history notes from the specified date. Leave blank to create notes for all history')
+      .setDesc(`Create notes from the specified date. oldest: ${oldestDate}`)
       .addText(text => text
         .setPlaceholder('Example: 2025-01-01')
-        .setValue(this.plugin.settings.fromDate || format(startOfMonth(new Date()), 'yyyy-MM-dd'))
+        .setValue(this.plugin.settings.fromDate || format(startOfToday(), 'yyyy-MM-dd'))
         .onChange(async (value) => {
           this.plugin.settings.fromDate = value
           await this.plugin.saveSettings()

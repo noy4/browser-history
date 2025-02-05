@@ -1,6 +1,6 @@
 import type { App, TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { addDays, differenceInDays, format, startOfDay, subDays } from 'date-fns'
+import { addDays, differenceInDays, format, startOfDay, startOfToday, subDays } from 'date-fns'
 import { Notice } from 'obsidian'
 import { DBClient } from './db'
 import { log } from './utils'
@@ -22,13 +22,18 @@ export class BrowserHistory {
   }
 
   async load() {
-    this.db = await DBClient.load({
-      sqlitePath: this.plugin.settings.sqlitePath,
-    })
+    try {
+      this.db = await DBClient.load({
+        sqlitePath: this.plugin.settings.sqlitePath,
+      })
+    }
+    catch (e) {
+      new Notice(`Failed to load browser history: ${e}`)
+    }
   }
 
   async createDailyNotes() {
-    const today = startOfDay(new Date())
+    const today = startOfToday()
     const _fromDate = this.plugin.settings.fromDate
     const fromDate = _fromDate ? new Date(`${_fromDate} 00:00:00`) : today
     const dayCount = differenceInDays(today, fromDate) + 1

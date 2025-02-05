@@ -51,8 +51,10 @@ function toRecords(
 }
 
 interface GetUrlsParams {
-  fromDate: Date
-  toDate: Date
+  fromDate?: Date
+  toDate?: Date
+  limit?: number
+  desc?: boolean
 }
 
 interface LoadOptions {
@@ -75,16 +77,21 @@ export class DBClient {
   }
 
   getUrls(params: GetUrlsParams) {
-    const { fromDate, toDate } = params
+    const { fromDate, toDate, limit, desc = true } = params
+    const whereClause = [
+      'last_visit_time != 0', // broken data?
+      fromDate && `${fromDate.getTime()} <= unix(last_visit_time)`,
+      toDate && `unix(last_visit_time) < ${toDate.getTime()}`,
+    ].filter(Boolean).join(' and ')
 
     const query = `
       select
         *,
         unix(last_visit_time) as last_visit_time
       from urls
-      where ${fromDate.getTime()} <= unix(last_visit_time)
-        and unix(last_visit_time) < ${toDate.getTime()}
-      order by last_visit_time desc
+      ${whereClause ? `where ${whereClause}` : ''}
+      order by last_visit_time ${desc ? 'desc' : 'asc'}
+      ${limit ? `limit ${limit}` : ''}
     `
     const results = this.db.exec(query)
     const records = results.map(toRecords)[0] || []
