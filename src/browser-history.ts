@@ -31,7 +31,8 @@ export class BrowserHistory {
     const _fromDate = this.plugin.settings.fromDate
     const fromDate = _fromDate ? new Date(_fromDate) : today
     const dayCount = today.getDate() - fromDate.getDate() + 1
-    const dates = Array.from({ length: dayCount }).map((_, i) => subDays(today, i))
+    const dates = Array.from({ length: dayCount })
+      .map((_, i) => subDays(today, i))
     const paths: string[] = []
 
     for (const date of dates) {
@@ -53,25 +54,27 @@ export class BrowserHistory {
   }
 
   async _createDailyNote(options?: CreateDailyNoteOptions) {
-    const { date: fromDate, overwrite } = {
+    const { date, overwrite } = {
       date: startOfDay(new Date()),
       ...options,
     }
 
-    const title = format(fromDate, 'yyyy-MM-dd')
+    const title = format(date, 'yyyy-MM-dd')
     const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
     const file = this.app.vault.getAbstractFileByPath(path)
 
+    // return if already exists
     if (file && !overwrite) {
       log(`already exists: ${path}`)
       return
     }
 
     const records = this.db.getUrls({
-      fromDate,
-      toDate: addDays(fromDate, 1),
+      fromDate: date,
+      toDate: addDays(date, 1),
     })
 
+    // return if no history
     if (!records.length) {
       log(`no history for ${title}`)
       return
