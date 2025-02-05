@@ -1,6 +1,6 @@
 import type { App, TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { addDays, format, startOfDay, subDays } from 'date-fns'
+import { addDays, differenceInDays, format, startOfDay, subDays } from 'date-fns'
 import { Notice } from 'obsidian'
 import { DBClient } from './db'
 import { log } from './utils'
@@ -20,7 +20,7 @@ export class BrowserHistory {
     this.app = plugin.app
   }
 
-  async onload() {
+  async load() {
     this.db = await DBClient.load({
       sqlitePath: this.plugin.settings.sqlitePath,
     })
@@ -29,8 +29,8 @@ export class BrowserHistory {
   async createDailyNotes() {
     const today = startOfDay(new Date())
     const _fromDate = this.plugin.settings.fromDate
-    const fromDate = _fromDate ? new Date(_fromDate) : today
-    const dayCount = today.getDate() - fromDate.getDate() + 1
+    const fromDate = _fromDate ? new Date(`${_fromDate} 00:00:00`) : today
+    const dayCount = differenceInDays(today, fromDate) + 1
     const dates = Array.from({ length: dayCount })
       .map((_, i) => subDays(today, i))
     const files: TFile[] = []

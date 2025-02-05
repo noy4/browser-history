@@ -16,17 +16,17 @@ const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
 
 export default class BrowserHistoryPlugin extends Plugin {
   settings: BrowserHistoryPluginSettings
-  browserHistory = new BrowserHistory(this)
+  history = new BrowserHistory(this)
 
   async onload() {
     await this.loadSettings()
-    await this.browserHistory.onload()
+    await this.history.load()
 
     this.addRibbonIcon(
       'history',
       'Open today\'s browser history',
       async (e) => {
-        const file = await this.browserHistory.createDailyNote({ overwrite: true })
+        const file = await this.history.createDailyNote({ overwrite: true })
         if (file)
           this.app.workspace.getLeaf(e.metaKey).openFile(file)
       },
@@ -97,7 +97,7 @@ class BrowserHistorySettingTab extends PluginSettingTab {
         .setButtonText('Create notes')
         .setCta()
         .onClick(async () => {
-          this.plugin.browserHistory.createDailyNotes()
+          this.plugin.history.createDailyNotes()
         }),
       )
   }
