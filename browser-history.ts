@@ -40,6 +40,12 @@ function log(message: string) {
   console.log(`[Browser History] ${message}`)
 }
 
+interface CreateNoteParams {
+  fromDate?: Date
+  toDate?: Date
+  skipIfExists?: boolean
+}
+
 export class BrowserHistory {
   plugin: BrowserHistoryPlugin
   app: App
@@ -68,37 +74,41 @@ export class BrowserHistory {
     }
   }
 
-  async createNote(params?: {
-    fromDate?: Date
-    toDate?: Date
-    skipIfExists?: boolean
-  }) {
+  createNote(params?: CreateNoteParams) {
     try {
-      const {
-        fromDate = startOfMonth(new Date()),
-        toDate,
-        skipIfExists,
-      } = params || {}
+      return this._createNote(params)
+    }
+    catch (e) {
+      new Notice(`[Browser History] ${e}`)
+    }
+  }
 
-      const SQL = await initSqlJs({ wasmBinary: sqlWasm })
-      const dbBuffer = fs.readFileSync(this.plugin.settings.sqlitePath)
-      const db = new SQL.Database(dbBuffer)
+  async _createNote(params?: CreateNoteParams) {
+    const {
+      fromDate = startOfMonth(new Date()),
+      toDate,
+      skipIfExists,
+    } = params || {}
 
-      const title = format(fromDate, 'yyyy-MM')
-      const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
-      log(`create note: ${path}`)
+    const SQL = await initSqlJs({ wasmBinary: sqlWasm })
+    const dbBuffer = fs.readFileSync(this.plugin.settings.sqlitePath)
+    const db = new SQL.Database(dbBuffer)
 
-      if (skipIfExists && this.app.vault.getAbstractFileByPath(path)) {
-        log(`skip creating note: ${path}`)
-        return
-      }
+    const title = format(fromDate, 'yyyy-MM')
+    const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
+    log(`create note: ${path}`)
 
-      const condition = [
-        fromDate && `${fromDate.getTime()} <= last_visit_time`,
-        toDate && `last_visit_time < ${toDate.getTime()}`,
-      ].filter(Boolean).join(' and ') || 'true'
+    if (skipIfExists && this.app.vault.getAbstractFileByPath(path)) {
+      log(`skip creating note: ${path}`)
+      return
+    }
 
-      const query = `
+    const condition = [
+      fromDate && `${fromDate.getTime()} <= last_visit_time`,
+      toDate && `last_visit_time < ${toDate.getTime()}`,
+    ].filter(Boolean).join(' and ') || 'true'
+
+    const query = `
         select
           *,
           (last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
@@ -107,40 +117,36 @@ export class BrowserHistory {
         order by id desc
         limit 50
       `
-      const results = db.exec(query)
-      const records = results.map(toRecords)[0] || []
+    const results = db.exec(query)
+    const records = results.map(toRecords)[0] || []
 
-      if (records.length === 0) {
-        log(`no records found for ${title}`)
-        return
-      }
-
-      const dayMap = new Map<number, Record<string, SqlValue>[]>()
-      for (const row of records) {
-        const { last_visit_time } = row
-        const date = new Date(Number(last_visit_time))
-        const day = startOfDay(date).getTime()
-        const dayMapValue = dayMap.get(day) || []
-        dayMapValue.push(row)
-        dayMap.set(day, dayMapValue)
-      }
-
-      const content = [...dayMap].map(([day, rows]) => {
-        const formattedDate = format(new Date(Number(day)), 'M/d')
-        const formattedRows = rows.map((row) => {
-          const { title, url, last_visit_time } = row
-          const timestamp = format(new Date(Number(last_visit_time)), 'HH:mm')
-          return `- ${timestamp} [${title}](${url})`
-        })
-        return `## ${formattedDate}\n${formattedRows.join('\n')}`
-      }).join('\n\n')
-
-      await this.upsertFile(path, content)
-      new Notice('Browser history note created!')
+    if (records.length === 0) {
+      log(`no records found for ${title}`)
+      return
     }
-    catch (e) {
-      new Notice(`[Browser History] ${e}`)
+
+    const dayMap = new Map<number, Record<string, SqlValue>[]>()
+    for (const row of records) {
+      const { last_visit_time } = row
+      const date = new Date(Number(last_visit_time))
+      const day = startOfDay(date).getTime()
+      const dayMapValue = dayMap.get(day) || []
+      dayMapValue.push(row)
+      dayMap.set(day, dayMapValue)
     }
+
+    const content = [...dayMap].map(([day, rows]) => {
+      const formattedDate = format(new Date(Number(day)), 'M/d')
+      const formattedRows = rows.map((row) => {
+        const { title, url, last_visit_time } = row
+        const timestamp = format(new Date(Number(last_visit_time)), 'HH:mm')
+        return `- ${timestamp} [${title}](${url})`
+      })
+      return `## ${formattedDate}\n${formattedRows.join('\n')}`
+    }).join('\n\n')
+
+    await this.upsertFile(path, content)
+    new Notice('Browser history note created!')
   }
 
   async upsertFile(path: string, data: string) {
