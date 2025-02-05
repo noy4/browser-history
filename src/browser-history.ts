@@ -1,7 +1,7 @@
 import type { App, TFile } from 'obsidian'
 import type { SqlValue } from 'sql.js'
 import type BrowserHistoryPlugin from './main'
-import { addMonths, format, startOfDay, startOfMonth, subMonths } from 'date-fns'
+import { addDays, addMonths, format, startOfDay, startOfMonth, subMonths } from 'date-fns'
 import { Notice } from 'obsidian'
 import { DBClient } from './db'
 
@@ -13,6 +13,11 @@ interface CreateNoteParams {
   fromDate?: Date
   toDate?: Date
   skipIfExists?: boolean
+}
+
+interface CreateDailyNoteOptions {
+  date?: Date
+  overwrite?: boolean
 }
 
 export class BrowserHistory {
@@ -50,6 +55,13 @@ export class BrowserHistory {
     }
   }
 
+  async createDailyNotes() {
+    const today = startOfDay(new Date())
+    const _fromDate = this.plugin.settings.fromDate
+    const fromDate = _fromDate ? new Date(_fromDate) : today
+    // const
+  }
+
   createNote(params?: CreateNoteParams) {
     try {
       return this._createNote(params)
@@ -57,6 +69,49 @@ export class BrowserHistory {
     catch (e) {
       new Notice(`[Browser History] ${e}`)
     }
+  }
+
+  createDailyNote(options?: CreateDailyNoteOptions) {
+    try {
+      return this._createDailyNote(options)
+    }
+    catch (e) {
+      new Notice(`[Browser History] ${e}`)
+    }
+  }
+
+  async _createDailyNote(options?: CreateDailyNoteOptions) {
+    const { date: fromDate, overwrite } = {
+      date: startOfDay(new Date()),
+      ...options,
+    }
+
+    const title = format(fromDate, 'yyyy-MM-dd')
+    const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
+    const file = this.app.vault.getAbstractFileByPath(path)
+
+    if (file && !overwrite) {
+      log(`already exists: ${path}`)
+      return
+    }
+
+    const records = this.db.getUrls({
+      fromDate,
+      toDate: addDays(fromDate, 1),
+    })
+
+    if (!records.length) {
+      log(`no history for ${title}`)
+      return
+    }
+
+    const content = records.map((v) => {
+      const timestamp = format(new Date(v.last_visit_time as number), 'HH:mm')
+      return `- ${timestamp} [${v.title}] ${v.url}`
+    }).join('\n')
+
+    await this.upsertFile(path, content)
+    return true
   }
 
   async _createNote(params?: CreateNoteParams) {

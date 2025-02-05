@@ -4,7 +4,7 @@ import initSqlJs from 'sql.js'
 
 // @ts-expect-error wasm binary
 // eslint-disable-next-line antfu/no-import-dist, antfu/no-import-node-modules-by-path
-import sqlWasm from './node_modules/sql.js/dist/sql-wasm.wasm'
+import sqlWasm from '../node_modules/sql.js/dist/sql-wasm.wasm'
 
 // urls
 // "id"
@@ -56,6 +56,7 @@ export class DBClient {
   }
 
   getUrls(params?: GetUrlsParams) {
+    console.log('params:', params)
     const { fromDate, toDate } = params || {}
     const condition = [
       fromDate && `${fromDate.getTime()} <= last_visit_time`,
@@ -73,6 +74,7 @@ export class DBClient {
     `
     const results = this.db.exec(query)
     const records = results.map(toRecords)[0] || []
+    console.log(query, records)
     return records
   }
 }
