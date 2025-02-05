@@ -1,40 +1,9 @@
 import type BrowserHistoryPlugin from 'main'
 import type { App, TFile } from 'obsidian'
-import type { QueryExecResult, SqlValue } from 'sql.js'
-import * as fs from 'node:fs'
+import type { SqlValue } from 'sql.js'
 import { addMonths, format, startOfDay, startOfMonth, subMonths } from 'date-fns'
+import { DBClient } from 'db'
 import { Notice } from 'obsidian'
-import initSqlJs from 'sql.js'
-
-// @ts-expect-error wasm binary
-// eslint-disable-next-line antfu/no-import-dist, antfu/no-import-node-modules-by-path
-import sqlWasm from './node_modules/sql.js/dist/sql-wasm.wasm'
-
-// urls
-// "id"
-// "url"
-// "title"
-// "visit_count"
-// "typed_count"
-// "last_visit_time"
-// "hidden"
-
-// last_visit_time is in microseconds since 1601-01-01T00:00:00Z
-// [sqlite - What is the format of Chrome's timestamps? - Stack Overflow](https://stackoverflow.com/questions/20458406/what-is-the-format-of-chromes-timestamps)
-const epoch1970 = new Date('1970-01-01T00:00:00Z')
-const epoch1601 = new Date('1601-01-01T00:00:00Z')
-const UNIX_EPOCH_OFFSET = epoch1970.getTime() - epoch1601.getTime() // 11644473600000
-
-function toRecords(
-  result: QueryExecResult,
-): Record<string, SqlValue>[] {
-  const { columns, values } = result
-  return values.map(row =>
-    Object.assign({}, ...row.map((value, index) => ({
-      [columns[index]]: value,
-    }))),
-  )
-}
 
 function log(message: string) {
   console.log(`[Browser History] ${message}`)
@@ -49,10 +18,17 @@ interface CreateNoteParams {
 export class BrowserHistory {
   plugin: BrowserHistoryPlugin
   app: App
+  db: DBClient
 
   constructor(plugin: BrowserHistoryPlugin) {
     this.plugin = plugin
     this.app = plugin.app
+  }
+
+  async onload() {
+    this.db = await DBClient.load({
+      sqlitePath: this.plugin.settings.sqlitePath,
+    })
   }
 
   async createNotes() {
@@ -84,41 +60,18 @@ export class BrowserHistory {
   }
 
   async _createNote(params?: CreateNoteParams) {
-    const {
-      fromDate = startOfMonth(new Date()),
-      toDate,
-      skipIfExists,
-    } = params || {}
-
-    const SQL = await initSqlJs({ wasmBinary: sqlWasm })
-    const dbBuffer = fs.readFileSync(this.plugin.settings.sqlitePath)
-    const db = new SQL.Database(dbBuffer)
+    let { fromDate, toDate, skipIfExists } = params || {}
+    fromDate ||= startOfMonth(new Date())
 
     const title = format(fromDate, 'yyyy-MM')
     const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
-    log(`create note: ${path}`)
 
     if (skipIfExists && this.app.vault.getAbstractFileByPath(path)) {
       log(`skip creating note: ${path}`)
       return
     }
 
-    const condition = [
-      fromDate && `${fromDate.getTime()} <= last_visit_time`,
-      toDate && `last_visit_time < ${toDate.getTime()}`,
-    ].filter(Boolean).join(' and ') || 'true'
-
-    const query = `
-        select
-          *,
-          (last_visit_time / 1000 - ${UNIX_EPOCH_OFFSET}) as last_visit_time
-        from urls
-        where ${condition}
-        order by id desc
-        limit 50
-      `
-    const results = db.exec(query)
-    const records = results.map(toRecords)[0] || []
+    const records = this.db.getUrls({ fromDate, toDate })
 
     if (records.length === 0) {
       log(`no records found for ${title}`)

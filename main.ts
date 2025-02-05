@@ -22,6 +22,7 @@ export default class BrowserHistoryPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings()
+    await this.browserHistory.onload()
 
     this.addRibbonIcon('history', 'Open browser history', (evt: MouseEvent) => {
       this.browserHistory.createNote()
