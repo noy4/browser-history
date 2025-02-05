@@ -1,7 +1,6 @@
 import type { App, TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { addDays, differenceInDays, format, startOfDay, startOfToday, subDays } from 'date-fns'
-import { Notice } from 'obsidian'
 import { DBClient } from './db'
 import { log, notify } from './utils'
 
@@ -23,16 +22,25 @@ export class BrowserHistory {
 
   async load() {
     try {
-      this.db = await DBClient.load({
-        sqlitePath: this.plugin.settings.sqlitePath,
-      })
+      await this._load()
+      return true
     }
     catch (e) {
       notify(`Failed to load: ${e}`)
     }
   }
 
+  async _load() {
+    this.db = await DBClient.load({
+      sqlitePath: this.plugin.settings.sqlitePath,
+    })
+  }
+
   async createDailyNotes() {
+    const loaded = await this.load()
+    if (!loaded)
+      return
+
     const today = startOfToday()
     const _fromDate = this.plugin.settings.fromDate
     const fromDate = _fromDate ? new Date(`${_fromDate} 00:00:00`) : today
@@ -40,7 +48,6 @@ export class BrowserHistory {
     const dates = Array.from({ length: dayCount })
       .map((_, i) => subDays(today, i))
     const files: TFile[] = []
-    await this.load()
 
     for (const date of dates) {
       const path = await this.createDailyNote({ date, load: false })
@@ -51,9 +58,9 @@ export class BrowserHistory {
     notify(`Created ${files.length} notes`)
   }
 
-  createDailyNote(options?: CreateDailyNoteOptions) {
+  async createDailyNote(options?: CreateDailyNoteOptions) {
     try {
-      return this._createDailyNote(options)
+      return await this._createDailyNote(options)
     }
     catch (e) {
       notify(e)
@@ -67,6 +74,9 @@ export class BrowserHistory {
       ...options,
     }
 
+    if (load)
+      await this._load()
+
     const title = format(date, 'yyyy-MM-dd')
     const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
     const file = this.app.vault.getAbstractFileByPath(path)
@@ -76,9 +86,6 @@ export class BrowserHistory {
       log(`already exists: ${path}`)
       return
     }
-
-    if (load)
-      await this.load()
 
     const records = this.db.getUrls({
       fromDate: date,

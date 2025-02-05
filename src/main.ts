@@ -2,7 +2,7 @@ import type { App } from 'obsidian'
 import { format, startOfToday } from 'date-fns'
 import { Plugin, PluginSettingTab, Setting } from 'obsidian'
 import { BrowserHistory } from './browser-history'
-import { wrap } from './utils'
+import { notify } from './utils'
 
 interface BrowserHistoryPluginSettings {
   sqlitePath: string
@@ -21,7 +21,6 @@ export default class BrowserHistoryPlugin extends Plugin {
 
   async onload() {
     await this.loadSettings()
-    await this.history.load()
 
     this.addRibbonIcon(
       'history',
@@ -60,8 +59,8 @@ class BrowserHistorySettingTab extends PluginSettingTab {
     containerEl.empty()
 
     new Setting(containerEl)
-      .setName('Sqlite location')
-      .setDesc('Path to the browser history sqlite database. ex. /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
+      .setName('Database location')
+      .setDesc('Path to the browser history file. ex. /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
       .addText(text => text
         .setPlaceholder('Example: /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
         .setValue(this.plugin.settings.sqlitePath)
@@ -70,6 +69,27 @@ class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+
+    new Setting(containerEl)
+      .setName('Check connection')
+      .setDesc('Check if the database is connected.')
+      .addButton(button => button
+        .setButtonText('Check')
+        .setCta()
+        .onClick(async () => {
+          const loaded = await this.plugin.history.load()
+          if (!loaded)
+            return
+
+          const count = this.plugin.history.db.getUrlCount().toLocaleString()
+          const data = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
+          const oldestDate = data
+            ? format(new Date(data.last_visit_time as number), 'yyyy-MM-dd')
+            : ''
+
+          const message = `Connected. ${count} records exists.${count ? ` (oldest: ${oldestDate})` : ''}`
+          notify(message)
+        }))
 
     new Setting(containerEl)
       .setName('New file location')
@@ -83,15 +103,9 @@ class BrowserHistorySettingTab extends PluginSettingTab {
         }),
       )
 
-    const { data } = wrap(() =>
-      this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0),
-    )
-    const oldestDate = data
-      ? format(new Date(data.last_visit_time as number), 'yyyy-MM-dd')
-      : 'no record'
     new Setting(containerEl)
       .setName('Create notes')
-      .setDesc(`Create notes from the specified date. oldest: ${oldestDate}`)
+      .setDesc(`Create history notes from the specified date. Will be skipped if the note already exists.`)
       .addText(text => text
         .setPlaceholder('Example: 2025-01-01')
         .setValue(this.plugin.settings.fromDate || format(startOfToday(), 'yyyy-MM-dd'))

@@ -6,6 +6,16 @@ export function log(message: string) {
   console.log(`${messageHeader} ${message}`)
 }
 
+export class BrowserHistoryNotice extends Notice {
+  constructor(message: string) {
+    super(`${messageHeader} ${message}`)
+  }
+}
+
+export function notify(message: string) {
+  new BrowserHistoryNotice(message)
+}
+
 type Result<T> = {
   data: T
   error: null
@@ -22,14 +32,4 @@ export function wrap<T>(fn: () => T): Result<T> {
   catch (e) {
     return { data: null, error: e }
   }
-}
-
-export class BrowserHistoryNotice extends Notice {
-  constructor(message: string) {
-    super(`${messageHeader} ${message}`)
-  }
-}
-
-export function notify(message: string) {
-  new BrowserHistoryNotice(message)
 }

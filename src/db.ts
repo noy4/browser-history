@@ -97,4 +97,13 @@ export class DBClient {
     const records = results.map(toRecords)[0] || []
     return records
   }
+
+  getUrlCount() {
+    const query = `
+      select count(*) as count from urls
+    `
+    const results = this.db.exec(query)
+    const records = results.map(toRecords)[0] || []
+    return records[0]?.count as number || 0
+  }
 }
