@@ -8,6 +8,7 @@ import { log } from './utils'
 interface CreateDailyNoteOptions {
   date?: Date
   overwrite?: boolean
+  load?: boolean
 }
 
 export class BrowserHistory {
@@ -34,9 +35,10 @@ export class BrowserHistory {
     const dates = Array.from({ length: dayCount })
       .map((_, i) => subDays(today, i))
     const files: TFile[] = []
+    await this.load()
 
     for (const date of dates) {
-      const path = await this.createDailyNote({ date })
+      const path = await this.createDailyNote({ date, load: false })
       if (path)
         files.push(path)
     }
@@ -54,8 +56,9 @@ export class BrowserHistory {
   }
 
   async _createDailyNote(options?: CreateDailyNoteOptions) {
-    const { date, overwrite } = {
+    const { date, overwrite, load } = {
       date: startOfDay(new Date()),
+      load: true,
       ...options,
     }
 
@@ -68,6 +71,9 @@ export class BrowserHistory {
       log(`already exists: ${path}`)
       return
     }
+
+    if (load)
+      await this.load()
 
     const records = this.db.getUrls({
       fromDate: date,
