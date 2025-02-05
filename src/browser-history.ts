@@ -3,7 +3,7 @@ import type BrowserHistoryPlugin from './main'
 import { addDays, differenceInDays, format, startOfDay, startOfToday, subDays } from 'date-fns'
 import { Notice } from 'obsidian'
 import { DBClient } from './db'
-import { log } from './utils'
+import { log, notify } from './utils'
 
 interface CreateDailyNoteOptions {
   date?: Date
@@ -28,7 +28,7 @@ export class BrowserHistory {
       })
     }
     catch (e) {
-      new Notice(`Failed to load browser history: ${e}`)
+      notify(`Failed to load: ${e}`)
     }
   }
 
@@ -48,7 +48,7 @@ export class BrowserHistory {
         files.push(path)
     }
 
-    new Notice(`Created ${files.length} notes`)
+    notify(`Created ${files.length} notes`)
   }
 
   createDailyNote(options?: CreateDailyNoteOptions) {
@@ -56,7 +56,7 @@ export class BrowserHistory {
       return this._createDailyNote(options)
     }
     catch (e) {
-      new Notice(`[Browser History] ${e}`)
+      notify(e)
     }
   }
 

@@ -2,6 +2,7 @@ import type { App } from 'obsidian'
 import { format, startOfToday } from 'date-fns'
 import { Plugin, PluginSettingTab, Setting } from 'obsidian'
 import { BrowserHistory } from './browser-history'
+import { wrap } from './utils'
 
 interface BrowserHistoryPluginSettings {
   sqlitePath: string
@@ -82,10 +83,12 @@ class BrowserHistorySettingTab extends PluginSettingTab {
         }),
       )
 
-    const record = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
-    const oldestDate = record
-      ? format(new Date(record.last_visit_time as number), 'yyyy-MM-dd')
-      : '-'
+    const { data } = wrap(() =>
+      this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0),
+    )
+    const oldestDate = data
+      ? format(new Date(data.last_visit_time as number), 'yyyy-MM-dd')
+      : 'no record'
     new Setting(containerEl)
       .setName('Create notes')
       .setDesc(`Create notes from the specified date. oldest: ${oldestDate}`)
