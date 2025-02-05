@@ -4,14 +4,12 @@ import { Plugin, PluginSettingTab, Setting } from 'obsidian'
 import { BrowserHistory } from './browser-history'
 
 interface BrowserHistoryPluginSettings {
-  mySetting: string
   sqlitePath: string
   folderPath: string
   fromDate?: string
 }
 
 const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
-  mySetting: 'default',
   sqlitePath: '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History',
   folderPath: 'Browser History',
 }
@@ -53,17 +51,6 @@ class BrowserHistorySettingTab extends PluginSettingTab {
     const { containerEl } = this
 
     containerEl.empty()
-
-    new Setting(containerEl)
-      .setName('Setting #1')
-      .setDesc('It\'s a secret')
-      .addText(text => text
-        .setPlaceholder('Enter your secret')
-        .setValue(this.plugin.settings.mySetting)
-        .onChange(async (value) => {
-          this.plugin.settings.mySetting = value
-          await this.plugin.saveSettings()
-        }))
 
     new Setting(containerEl)
       .setName('Sqlite path')
