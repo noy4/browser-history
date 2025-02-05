@@ -56,7 +56,7 @@ Quick starting guide for new plugin devs:
 - Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
 
 ## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
+- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
 - To use eslint with this project, make sure to install eslint from terminal:
   - `npm install -g eslint`
 - To use eslint to analyze this project use this command:
@@ -73,7 +73,7 @@ The simple way is to set the `fundingUrl` field to your link in your `manifest.j
 
 ```json
 {
-    "fundingUrl": "https://buymeacoffee.com"
+  "fundingUrl": "https://buymeacoffee.com"
 }
 ```
 
@@ -81,11 +81,11 @@ If you have multiple URLs, you can also do:
 
 ```json
 {
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
+  "fundingUrl": {
+    "Buy Me a Coffee": "https://buymeacoffee.com",
+    "GitHub Sponsor": "https://github.com/sponsors",
+    "Patreon": "https://www.patreon.com/"
+  }
 }
 ```
 

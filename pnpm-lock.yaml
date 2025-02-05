@@ -39,6 +39,9 @@ importers:
       esbuild:
         specifier: 0.17.3
         version: 0.17.3
+      eslint:
+        specifier: ^9.19.0
+        version: 9.19.0
       obsidian:
         specifier: latest
         version: 1.7.2(@codemirror/state@6.5.1)(@codemirror/view@6.36.2)
