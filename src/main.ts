@@ -1,7 +1,7 @@
 import type { App } from 'obsidian'
-import { BrowserHistory } from 'browser-history'
 import { format, startOfMonth } from 'date-fns'
 import { Plugin, PluginSettingTab, Setting } from 'obsidian'
+import { BrowserHistory } from './browser-history'
 
 interface BrowserHistoryPluginSettings {
   mySetting: string

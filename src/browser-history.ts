@@ -1,9 +1,9 @@
-import type BrowserHistoryPlugin from 'main'
 import type { App, TFile } from 'obsidian'
 import type { SqlValue } from 'sql.js'
+import type BrowserHistoryPlugin from './main'
 import { addMonths, format, startOfDay, startOfMonth, subMonths } from 'date-fns'
-import { DBClient } from 'db'
 import { Notice } from 'obsidian'
+import { DBClient } from './db'
 
 function log(message: string) {
   console.log(`[Browser History] ${message}`)
