@@ -104,7 +104,7 @@ class BrowserHistorySettingTab extends PluginSettingTab {
         .setButtonText('Create notes')
         .setCta()
         .onClick(async () => {
-          this.plugin.browserHistory.createNotes()
+          this.plugin.browserHistory.createDailyNotes()
         }),
       )
   }

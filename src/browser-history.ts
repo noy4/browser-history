@@ -1,6 +1,6 @@
 import type { App, TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { addDays, addMonths, format, startOfDay, startOfMonth, subMonths } from 'date-fns'
+import { addDays, addMonths, format, startOfDay, startOfMonth, subDays, subMonths } from 'date-fns'
 import { Notice } from 'obsidian'
 import { DBClient } from './db'
 
@@ -52,7 +52,17 @@ export class BrowserHistory {
     const today = startOfDay(new Date())
     const _fromDate = this.plugin.settings.fromDate
     const fromDate = _fromDate ? new Date(_fromDate) : today
-    // const
+    const dayCount = today.getDate() - fromDate.getDate() + 1
+    const dates = Array.from({ length: dayCount }).map((_, i) => subDays(today, i))
+    const paths: string[] = []
+
+    for (const date of dates) {
+      const path = await this.createDailyNote({ date })
+      if (path)
+        paths.push(path)
+    }
+
+    new Notice(`Created ${paths.length} notes`)
   }
 
   createDailyNote(options?: CreateDailyNoteOptions) {
@@ -95,7 +105,7 @@ export class BrowserHistory {
     }).join('\n')
 
     await this.upsertFile(path, content)
-    return true
+    return path
   }
 
   async upsertFile(path: string, data: string) {
