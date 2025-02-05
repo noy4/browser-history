@@ -22,9 +22,15 @@ export default class BrowserHistoryPlugin extends Plugin {
     await this.loadSettings()
     await this.browserHistory.onload()
 
-    this.addRibbonIcon('history', 'Open browser history', () => {
-      this.browserHistory.createDailyNote({ overwrite: true })
-    })
+    this.addRibbonIcon(
+      'history',
+      'Open today\'s browser history',
+      async (e) => {
+        const file = await this.browserHistory.createDailyNote({ overwrite: true })
+        if (file)
+          this.app.workspace.getLeaf(e.metaKey).openFile(file)
+      },
+    )
 
     this.addSettingTab(new BrowserHistorySettingTab(this.app, this))
     this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000))

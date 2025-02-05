@@ -33,15 +33,15 @@ export class BrowserHistory {
     const dayCount = today.getDate() - fromDate.getDate() + 1
     const dates = Array.from({ length: dayCount })
       .map((_, i) => subDays(today, i))
-    const paths: string[] = []
+    const files: TFile[] = []
 
     for (const date of dates) {
       const path = await this.createDailyNote({ date })
       if (path)
-        paths.push(path)
+        files.push(path)
     }
 
-    new Notice(`Created ${paths.length} notes`)
+    new Notice(`Created ${files.length} notes`)
   }
 
   createDailyNote(options?: CreateDailyNoteOptions) {
@@ -85,8 +85,7 @@ export class BrowserHistory {
       return `- ${timestamp} [${v.title}](${v.url})`
     }).join('\n')
 
-    await this.upsertFile(path, content)
-    return path
+    return this.upsertFile(path, content)
   }
 
   async upsertFile(path: string, data: string) {
@@ -101,10 +100,11 @@ export class BrowserHistory {
         await this.app.vault.createFolder(folderPath)
     }
 
-    const file = this.app.vault.getAbstractFileByPath(path)
+    let file = this.app.vault.getAbstractFileByPath(path) as TFile | null
     if (!file)
-      await this.app.vault.create(path, data)
+      file = await this.app.vault.create(path, data)
     else
-      await this.app.vault.modify(file as TFile, data)
+      await this.app.vault.modify(file, data)
+    return file
   }
 }
