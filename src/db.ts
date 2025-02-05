@@ -55,7 +55,7 @@ interface GetUrlsParams {
   toDate: Date
 }
 
-interface SqlJsOptions {
+interface LoadOptions {
   sqlitePath: string
 }
 
@@ -66,7 +66,7 @@ export class DBClient {
     this.db = db
   }
 
-  static async load(options: SqlJsOptions) {
+  static async load(options: LoadOptions) {
     const SQL = await initSqlJs({ wasmBinary: sqlWasm })
     const dbBuffer = fs.readFileSync(options.sqlitePath)
     const db = new SQL.Database(dbBuffer)

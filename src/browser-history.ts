@@ -3,10 +3,7 @@ import type BrowserHistoryPlugin from './main'
 import { addDays, format, startOfDay, subDays } from 'date-fns'
 import { Notice } from 'obsidian'
 import { DBClient } from './db'
-
-function log(message: string) {
-  console.log(`[Browser History] ${message}`)
-}
+import { log } from './utils'
 
 interface CreateDailyNoteOptions {
   date?: Date
