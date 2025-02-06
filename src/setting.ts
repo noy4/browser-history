@@ -25,12 +25,21 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     this.plugin = plugin
   }
 
-  display(): void {
+  display() {
     const { containerEl } = this
-
     containerEl.empty()
 
-    new Setting(containerEl)
+    this.addDatabaseLocationSetting()
+    this.addCheckConnectionSetting()
+    this.addFileLocationSetting()
+    const startDateSetting = this.addStartDateSetting()
+    this.addSyncSetting(startDateSetting)
+    this.addSyncOnStartupSetting()
+    this.addAutoSyncSetting()
+  }
+
+  private addDatabaseLocationSetting() {
+    new Setting(this.containerEl)
       .setName('Database location')
       .setDesc('Path to your browser history database file (e.g., /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History)')
       .addText(text => text
@@ -41,8 +50,10 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+  }
 
-    new Setting(containerEl)
+  private addCheckConnectionSetting() {
+    new Setting(this.containerEl)
       .setName('Check connection')
       .setDesc('Test the connection to your browser history database')
       .addButton(button => button
@@ -62,8 +73,10 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
           notify(message)
         }))
+  }
 
-    new Setting(containerEl)
+  private addFileLocationSetting() {
+    new Setting(this.containerEl)
       .setName('New file location')
       .setDesc('Directory where your browser history notes will be saved')
       .addText(text => text
@@ -74,8 +87,10 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+  }
 
-    const startDateSetting = new Setting(containerEl)
+  private addStartDateSetting() {
+    return new Setting(this.containerEl)
       .setName('Start date')
       .setDesc('Starting date for history note creation (automatically updates to today after sync)')
       .addText(text => text
@@ -86,8 +101,10 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+  }
 
-    new Setting(containerEl)
+  private addSyncSetting(startDateSetting: Setting) {
+    new Setting(this.containerEl)
       .setName('Sync')
       .setDesc('Create or update history notes from the specified start date')
       .addButton(button => button
@@ -103,8 +120,10 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           inputEl.value = this.plugin.settings.fromDate!
         }),
       )
+  }
 
-    new Setting(containerEl)
+  private addSyncOnStartupSetting() {
+    new Setting(this.containerEl)
       .setName('Sync on startup')
       .setDesc('Automatically sync history notes when Obsidian starts')
       .addToggle(toggle => toggle
@@ -114,8 +133,10 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+  }
 
-    new Setting(containerEl)
+  private addAutoSyncSetting() {
+    new Setting(this.containerEl)
       .setName('Auto sync')
       .setDesc('Set an interval for automatic history note synchronization')
       .addDropdown((dropdown) => {
@@ -131,7 +152,6 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
             this.plugin.settings.autoSyncMs = ms
             await this.plugin.saveSettings()
 
-            // set interval
             if (ms > 0) {
               if (this.plugin.autoSyncId)
                 window.clearInterval(this.plugin.autoSyncId)
@@ -143,7 +163,6 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
               )
             }
 
-            // clear interval
             else {
               window.clearInterval(this.plugin.autoSyncId)
               this.plugin.autoSyncId = undefined
