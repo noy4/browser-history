@@ -8,6 +8,8 @@ interface BrowserHistoryPluginSettings {
   sqlitePath: string
   folderPath: string
   fromDate?: string
+  syncOnStartup?: boolean
+  autoSyncMs?: number
 }
 
 const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
@@ -18,6 +20,7 @@ const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
 export default class BrowserHistoryPlugin extends Plugin {
   settings: BrowserHistoryPluginSettings
   history = new BrowserHistory(this)
+  autoSyncId: number | undefined
 
   async onload() {
     await this.loadSettings()
@@ -33,7 +36,17 @@ export default class BrowserHistoryPlugin extends Plugin {
     )
 
     this.addSettingTab(new BrowserHistorySettingTab(this.app, this))
-    this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000))
+
+    // sync on startup
+    if (this.settings.syncOnStartup)
+      await this.history.createDailyNotes()
+
+    // auto sync
+    if ((this.settings.autoSyncMs || -1) > 0) {
+      this.autoSyncId = this.registerInterval(window.setInterval(() => {
+        this.history.createDailyNotes()
+      }, this.settings.autoSyncMs))
+    }
   }
 
   async loadSettings() {
@@ -103,9 +116,9 @@ class BrowserHistorySettingTab extends PluginSettingTab {
         }),
       )
 
-    new Setting(containerEl)
-      .setName('Create notes')
-      .setDesc(`Create history notes from the specified date. Will be skipped if the note already exists.`)
+    const startDateSetting = new Setting(containerEl)
+      .setName('Start date')
+      .setDesc('The date from which to create history notes. Will be set to today after sync.')
       .addText(text => text
         .setPlaceholder('Example: 2025-01-01')
         .setValue(this.plugin.settings.fromDate || format(startOfToday(), 'yyyy-MM-dd'))
@@ -114,12 +127,65 @@ class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+
+    new Setting(containerEl)
+      .setName('Sync')
+      .setDesc(`Create history notes from the start date. If the note already exists, it will be overwritten.`)
       .addButton(button => button
-        .setButtonText('Create notes')
+        .setButtonText('Sync')
         .setCta()
         .onClick(async () => {
-          this.plugin.history.createDailyNotes()
+          await this.plugin.history.createDailyNotes()
+          const inputEl = startDateSetting.controlEl.querySelector('input')!
+          inputEl.value = this.plugin.settings.fromDate!
         }),
       )
+
+    new Setting(containerEl)
+      .setName('Sync on startup')
+      .setDesc('Sync history on startup.')
+      .addToggle(toggle => toggle
+        .setValue(this.plugin.settings.syncOnStartup || false)
+        .onChange(async (value) => {
+          this.plugin.settings.syncOnStartup = value
+          await this.plugin.saveSettings()
+        }),
+      )
+
+    new Setting(containerEl)
+      .setName('Auto sync')
+      .setDesc('Automatically create notes from the specified date.')
+      .addDropdown((dropdown) => {
+        dropdown.addOption('-1', 'Disabled')
+        dropdown.addOption(`${1000 * 5 * 1}`, '5 sec')
+        dropdown.addOption(`${1000 * 60 * 1}`, '1 min')
+        dropdown.addOption(`${1000 * 60 * 5}`, '5 min')
+        dropdown.addOption(`${1000 * 60 * 10}`, '10 min')
+        dropdown.addOption(`${1000 * 60 * 30}`, '30 min')
+        dropdown.setValue(String(this.plugin.settings.autoSyncMs || -1))
+          .onChange(async (value) => {
+            const ms = Number(value)
+            this.plugin.settings.autoSyncMs = ms
+            await this.plugin.saveSettings()
+
+            // set interval
+            if (ms > 0) {
+              if (this.plugin.autoSyncId)
+                window.clearInterval(this.plugin.autoSyncId)
+
+              this.plugin.autoSyncId = this.plugin.registerInterval(
+                window.setInterval(() => {
+                  this.plugin.history.createDailyNotes()
+                }, ms),
+              )
+            }
+
+            // clear interval
+            else {
+              window.clearInterval(this.plugin.autoSyncId)
+              this.plugin.autoSyncId = undefined
+            }
+          })
+      })
   }
 }
