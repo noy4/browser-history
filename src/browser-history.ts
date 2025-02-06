@@ -120,4 +120,14 @@ export class BrowserHistory {
       await this.app.vault.modify(file, data)
     return file
   }
+
+  onClickRibbon = async (e: MouseEvent) => {
+    const files = await this.syncNotes()
+    const todayFile = files?.at(0)
+
+    if (todayFile)
+      this.app.workspace.getLeaf(e.metaKey).openFile(todayFile)
+    else
+      notify('No history for today.')
+  }
 }
