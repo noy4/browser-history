@@ -88,6 +88,23 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       )
 
     new Setting(containerEl)
+      .setName('Sync')
+      .setDesc(`Create history notes from the start date. If the note already exists, it will be overwritten.`)
+      .addButton(button => button
+        .setButtonText('Sync')
+        .setCta()
+        .onClick(async () => {
+          const files = await this.plugin.history.syncNotes()
+          if (!files)
+            return
+
+          notify(`Synced ${files.length} notes`)
+          const inputEl = startDateSetting.controlEl.querySelector('input')!
+          inputEl.value = this.plugin.settings.fromDate!
+        }),
+      )
+
+    new Setting(containerEl)
       .setName('Sync on startup')
       .setDesc('Sync history notes on startup.')
       .addToggle(toggle => toggle
@@ -103,11 +120,11 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       .setDesc('Automatically sync history notes.')
       .addDropdown((dropdown) => {
         dropdown.addOption('-1', 'Disabled')
-        dropdown.addOption(`${1000 * 5 * 1}`, '5 sec')
         dropdown.addOption(`${1000 * 60 * 1}`, '1 min')
         dropdown.addOption(`${1000 * 60 * 5}`, '5 min')
         dropdown.addOption(`${1000 * 60 * 10}`, '10 min')
         dropdown.addOption(`${1000 * 60 * 30}`, '30 min')
+        dropdown.addOption(`${1000 * 5 * 1}`, '5 sec (test)')
         dropdown.setValue(String(this.plugin.settings.autoSyncMs || -1))
           .onChange(async (value) => {
             const ms = Number(value)
@@ -133,22 +150,5 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
             }
           })
       })
-
-    new Setting(containerEl)
-      .setName('Sync')
-      .setDesc(`Create history notes from the start date. If the note already exists, it will be overwritten.`)
-      .addButton(button => button
-        .setButtonText('Sync')
-        .setCta()
-        .onClick(async () => {
-          const files = await this.plugin.history.syncNotes()
-          if (!files)
-            return
-
-          notify(`Synced ${files.length} notes`)
-          const inputEl = startDateSetting.controlEl.querySelector('input')!
-          inputEl.value = this.plugin.settings.fromDate!
-        }),
-      )
   }
 }

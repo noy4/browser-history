@@ -2,6 +2,7 @@ import type { BrowserHistoryPluginSettings } from './setting'
 import { Plugin } from 'obsidian'
 import { BrowserHistory } from './browser-history'
 import { BrowserHistorySettingTab, DEFAULT_SETTINGS } from './setting'
+import { notify } from './utils'
 
 export default class BrowserHistoryPlugin extends Plugin {
   settings: BrowserHistoryPluginSettings
@@ -17,8 +18,11 @@ export default class BrowserHistoryPlugin extends Plugin {
       async (e) => {
         const files = await this.history.syncNotes()
         const todayFile = files?.at(0)
+
         if (todayFile)
           this.app.workspace.getLeaf(e.metaKey).openFile(todayFile)
+        else
+          notify('No history for today.')
       },
     )
 

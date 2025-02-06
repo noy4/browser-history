@@ -56,6 +56,7 @@ export class BrowserHistory {
 
     this.plugin.settings.fromDate = format(today, 'yyyy-MM-dd')
     await this.plugin.saveSettings()
+    log(`synced ${files.length} notes`)
     return files
   }
 
