@@ -15,7 +15,7 @@ export default class BrowserHistoryPlugin extends Plugin {
       'history',
       'Open today\'s browser history',
       async (e) => {
-        const file = await this.history.createDailyNote({ overwrite: true })
+        const file = await this.history.createDailyNote()
         if (file)
           this.app.workspace.getLeaf(e.metaKey).openFile(file)
       },

@@ -6,7 +6,6 @@ import { log, notify } from './utils'
 
 interface CreateDailyNoteOptions {
   date?: Date
-  overwrite?: boolean
   load?: boolean
 }
 
@@ -70,7 +69,7 @@ export class BrowserHistory {
   }
 
   async _createDailyNote(options?: CreateDailyNoteOptions) {
-    const { date, overwrite, load } = {
+    const { date, load } = {
       date: startOfDay(new Date()),
       load: true,
       ...options,
@@ -81,13 +80,6 @@ export class BrowserHistory {
 
     const title = format(date, 'yyyy-MM-dd')
     const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
-    const file = this.app.vault.getAbstractFileByPath(path)
-
-    // return if already exists
-    if (file && !overwrite) {
-      log(`already exists: ${path}`)
-      return
-    }
 
     const records = this.db.getUrls({
       fromDate: date,
