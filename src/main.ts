@@ -15,9 +15,10 @@ export default class BrowserHistoryPlugin extends Plugin {
       'history',
       'Open today\'s browser history',
       async (e) => {
-        const file = await this.history.createDailyNote()
-        if (file)
-          this.app.workspace.getLeaf(e.metaKey).openFile(file)
+        const files = await this.history.syncNotes()
+        const todayFile = files?.at(0)
+        if (todayFile)
+          this.app.workspace.getLeaf(e.metaKey).openFile(todayFile)
       },
     )
 
@@ -25,12 +26,12 @@ export default class BrowserHistoryPlugin extends Plugin {
 
     // sync on startup
     if (this.settings.syncOnStartup)
-      await this.history.createDailyNotes()
+      await this.history.syncNotes()
 
     // auto sync
     if ((this.settings.autoSyncMs || -1) > 0) {
       this.autoSyncId = this.registerInterval(window.setInterval(() => {
-        this.history.createDailyNotes()
+        this.history.syncNotes()
       }, this.settings.autoSyncMs))
     }
   }

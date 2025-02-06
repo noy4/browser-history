@@ -88,21 +88,8 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       )
 
     new Setting(containerEl)
-      .setName('Sync')
-      .setDesc(`Create history notes from the start date. If the note already exists, it will be overwritten.`)
-      .addButton(button => button
-        .setButtonText('Sync')
-        .setCta()
-        .onClick(async () => {
-          await this.plugin.history.createDailyNotes()
-          const inputEl = startDateSetting.controlEl.querySelector('input')!
-          inputEl.value = this.plugin.settings.fromDate!
-        }),
-      )
-
-    new Setting(containerEl)
       .setName('Sync on startup')
-      .setDesc('Sync history on startup.')
+      .setDesc('Sync history notes on startup.')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.syncOnStartup || false)
         .onChange(async (value) => {
@@ -113,7 +100,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName('Auto sync')
-      .setDesc('Automatically create notes from the specified date.')
+      .setDesc('Automatically sync history notes.')
       .addDropdown((dropdown) => {
         dropdown.addOption('-1', 'Disabled')
         dropdown.addOption(`${1000 * 5 * 1}`, '5 sec')
@@ -134,7 +121,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
 
               this.plugin.autoSyncId = this.plugin.registerInterval(
                 window.setInterval(() => {
-                  this.plugin.history.createDailyNotes()
+                  this.plugin.history.syncNotes()
                 }, ms),
               )
             }
@@ -146,5 +133,22 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
             }
           })
       })
+
+    new Setting(containerEl)
+      .setName('Sync')
+      .setDesc(`Create history notes from the start date. If the note already exists, it will be overwritten.`)
+      .addButton(button => button
+        .setButtonText('Sync')
+        .setCta()
+        .onClick(async () => {
+          const files = await this.plugin.history.syncNotes()
+          if (!files)
+            return
+
+          notify(`Synced ${files.length} notes`)
+          const inputEl = startDateSetting.controlEl.querySelector('input')!
+          inputEl.value = this.plugin.settings.fromDate!
+        }),
+      )
   }
 }

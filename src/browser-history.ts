@@ -35,7 +35,7 @@ export class BrowserHistory {
     })
   }
 
-  async createDailyNotes() {
+  async syncNotes() {
     const loaded = await this.load()
     if (!loaded)
       return
@@ -49,26 +49,26 @@ export class BrowserHistory {
     const files: TFile[] = []
 
     for (const date of dates) {
-      const path = await this.createDailyNote({ date, load: false })
+      const path = await this.syncNote({ date, load: false })
       if (path)
         files.push(path)
     }
 
     this.plugin.settings.fromDate = format(today, 'yyyy-MM-dd')
     await this.plugin.saveSettings()
-    notify(`Created ${files.length} notes`)
+    return files
   }
 
-  async createDailyNote(options?: CreateDailyNoteOptions) {
+  async syncNote(options?: CreateDailyNoteOptions) {
     try {
-      return await this._createDailyNote(options)
+      return await this._syncNote(options)
     }
     catch (e) {
       notify(e)
     }
   }
 
-  async _createDailyNote(options?: CreateDailyNoteOptions) {
+  async _syncNote(options?: CreateDailyNoteOptions) {
     const { date, load } = {
       date: startOfDay(new Date()),
       load: true,
