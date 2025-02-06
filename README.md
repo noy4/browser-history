@@ -1,94 +1,60 @@
-# Obsidian Sample Plugin
+# Browser History Plugin for Obsidian
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+This plugin syncs your browser history to Obsidian notes, making your browsing history searchable and manageable within Obsidian.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+- Sync browser history to Obsidian notes
+- Automatically sync on Obsidian startup
+- Configure automatic sync intervals
+- Quick access to today's history via ribbon icon
+- Customizable note storage location
 
-## First time developing plugins?
+## Settings
 
-Quick starting guide for new plugin devs:
-
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
-
-## Releasing new releases
-
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
-
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
-
-## Adding your plugin to the community plugin list
-
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
-
-## How to use
-
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-  "fundingUrl": "https://buymeacoffee.com"
-}
+### Database Location
+Path to your browser history database file. Default location for Brave browser:
+```
+/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History
 ```
 
-If you have multiple URLs, you can also do:
+### Check Connection
+Test the connection to your browser history database. Shows the total number of records and the oldest record date when successful.
 
-```json
-{
-  "fundingUrl": {
-    "Buy Me a Coffee": "https://buymeacoffee.com",
-    "GitHub Sponsor": "https://github.com/sponsors",
-    "Patreon": "https://www.patreon.com/"
-  }
-}
-```
+### New File Location
+Directory where your browser history notes will be saved. Default: `Browser History`
 
-## API Documentation
+### Start Date
+Starting date for history note creation. This automatically updates to today after each sync.
 
-See https://github.com/obsidianmd/obsidian-api
+### Sync
+Manually trigger the creation or update of history notes from the specified start date.
+
+### Sync on Startup
+Enable automatic synchronization when Obsidian starts.
+
+### Auto Sync
+Set an interval for automatic history note synchronization. Available options:
+- Disabled
+- 1 minute
+- 5 minutes
+- 10 minutes
+- 30 minutes
+- 5 seconds (for testing)
+
+## Installation
+
+1. Open Obsidian Settings
+2. Navigate to Community Plugins and disable Safe Mode
+3. Click Browse and search for "Browser History"
+4. Install the plugin and enable it
+
+## Usage
+
+1. Configure the database location in settings to point to your browser's history file
+2. Set your preferred note storage location
+3. Use the "Check Connection" button to verify database access
+4. Set a start date and click "Sync" to create history notes
+5. Optionally enable automatic sync features
+
+The plugin will create daily notes containing your browsing history, organized by date. You can quickly access today's history using the clock icon in the ribbon.
