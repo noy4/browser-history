@@ -1,22 +1,25 @@
-# Browser History Plugin for Obsidian
+# Obsidian Browser History
 
 This plugin syncs your browser history to Obsidian notes, making your browsing history searchable and manageable within Obsidian.
 
-## Features
+![Browser History](assets/browser_history_preview.png)
 
-- Sync browser history to Obsidian notes
-- Automatically sync on Obsidian startup
-- Configure automatic sync intervals
-- Quick access to today's history via ribbon icon
-- Customizable note storage location
+## Usage
+
+1. Install and enable the plugin.
+2. Go to the plugin settings.
+3. Configure the database location, and click "Check Connection" button to verify database access.
+![Settings](assets/browser_history_setting.png)
+4. Click "Open today's browser history" in the ribbon.
+![Ribbon](assets/browser_history_ribbon.png)
+5. Optionally enable auto sync features
 
 ## Settings
 
 ### Database Location
-Path to your browser history database file. Default location for Brave browser:
-```
-/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History
-```
+Path to your browser history database file. Examples:
+- Chrome: `/Users/noy/Library/Application Support/Google/Chrome/Default/History`
+- Brave: `/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History`
 
 ### Check Connection
 Test the connection to your browser history database. Shows the total number of records and the oldest record date when successful.
@@ -41,20 +44,3 @@ Set an interval for automatic history note synchronization. Available options:
 - 10 minutes
 - 30 minutes
 - 5 seconds (for testing)
-
-## Installation
-
-1. Open Obsidian Settings
-2. Navigate to Community Plugins and disable Safe Mode
-3. Click Browse and search for "Browser History"
-4. Install the plugin and enable it
-
-## Usage
-
-1. Configure the database location in settings to point to your browser's history file
-2. Set your preferred note storage location
-3. Use the "Check Connection" button to verify database access
-4. Set a start date and click "Sync" to create history notes
-5. Optionally enable automatic sync features
-
-The plugin will create daily notes containing your browsing history, organized by date. You can quickly access today's history using the clock icon in the ribbon.

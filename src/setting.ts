@@ -13,7 +13,7 @@ export interface BrowserHistoryPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
-  sqlitePath: '/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History',
+  sqlitePath: '/Users/noy/Library/Application Support/Google/Chrome/Default/History',
   folderPath: 'Browser History',
 }
 
@@ -41,9 +41,9 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addDatabaseLocationSetting() {
     new Setting(this.containerEl)
       .setName('Database location')
-      .setDesc('Path to your browser history database file (e.g., /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History)')
+      .setDesc('Path to your browser history database file (e.g., /Users/noy/Library/Application Support/Google/Chrome/Default/History)')
       .addText(text => text
-        .setPlaceholder('Example: /Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History')
+        .setPlaceholder('Example: /Users/noy/Library/Application Support/Google/Chrome/Default/History')
         .setValue(this.plugin.settings.sqlitePath)
         .onChange(async (value) => {
           this.plugin.settings.sqlitePath = value
