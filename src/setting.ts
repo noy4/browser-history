@@ -78,7 +78,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addFileLocationSetting() {
     new Setting(this.containerEl)
       .setName('New file location')
-      .setDesc('Directory where your browser history notes will be saved')
+      .setDesc('Directory where your browser history notes will be saved. **Warning**: Please select a different folder than your daily notes to avoid any conflicts.')
       .addText(text => text
         .setPlaceholder('Example: Browser History')
         .setValue(this.plugin.settings.folderPath)

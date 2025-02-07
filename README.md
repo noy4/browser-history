@@ -14,6 +14,9 @@ This plugin syncs your browser history to Obsidian notes, making your browsing h
 ![Ribbon](assets/browser_history_ribbon.png)
 5. Optionally enable auto sync features
 
+## !!Caution!!
+- **Do not publish history notes.** The URLs in the notes may contain authentication information.
+
 ## Settings
 
 ### Database Location
@@ -25,7 +28,7 @@ Path to your browser history database file. Examples:
 Test the connection to your browser history database. Shows the total number of records and the oldest record date when successful.
 
 ### New File Location
-Directory where your browser history notes will be saved. Default: `Browser History`
+Directory where your browser history notes will be saved. **Warning**: Please select a different folder than your daily notes to avoid any conflicts. Default: `Browser History`
 
 ### Start Date
 Starting date for history note creation. This automatically updates to today after each sync.
