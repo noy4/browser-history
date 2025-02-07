@@ -1,17 +1,17 @@
 # Obsidian Browser History
 
-This plugin syncs your browser history to Obsidian notes, making your browsing history searchable and manageable within Obsidian.
+This plugin syncs your browser history to Obsidian notes.
 
-![Browser History](assets/browser_history_preview.png)
+<img src="assets/browser_history_preview.png" alt="Browser History" width="600"/>
 
 ## Usage
 
 1. Install and enable the plugin.
 2. Go to the plugin settings.
 3. Configure the database location, and click "Check Connection" button to verify database access.
-![Settings](assets/browser_history_setting.png)
+    <img src="assets/browser_history_setting.png" alt="Settings" width="600"/>
 4. Click "Open today's browser history" in the ribbon.
-![Ribbon](assets/browser_history_ribbon.png)
+    <img src="assets/browser_history_ribbon.png" alt="Ribbon" width="300"/>
 5. Optionally enable auto sync features
 
 ## !!Caution!!
