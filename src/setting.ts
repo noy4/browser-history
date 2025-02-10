@@ -1,19 +1,35 @@
 import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
+import { userInfo } from 'node:os'
+import { platform } from 'node:process'
 import { format, startOfToday } from 'date-fns'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { notify } from './utils'
 
 export interface BrowserHistoryPluginSettings {
-  sqlitePath: string
+  sqlitePath?: string
   folderPath: string
   fromDate?: string
   syncOnStartup?: boolean
   autoSyncMs?: number
 }
 
+function getDefaultChromeHistoryPath() {
+  const username = userInfo().username
+
+  if (platform === 'darwin')
+    return `/Users/${username}/Library/Application Support/Google/Chrome/Default/History`
+
+  if (platform === 'win32')
+    return `C:\\Users\\${username}\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\History`
+
+  if (platform === 'linux')
+    return `/home/${username}/.config/google-chrome/Default/History`
+
+  return ''
+}
+
 export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
-  sqlitePath: '/Users/noy/Library/Application Support/Google/Chrome/Default/History',
   folderPath: 'Browser History',
 }
 
@@ -39,12 +55,17 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   }
 
   private addDatabaseLocationSetting() {
+    const defaultPath = getDefaultChromeHistoryPath()
+    if (!this.plugin.settings.sqlitePath) {
+      this.plugin.settings.sqlitePath = defaultPath
+      this.plugin.saveSettings()
+    }
     new Setting(this.containerEl)
       .setName('Database location')
-      .setDesc('Path to your browser history database file (e.g., /Users/noy/Library/Application Support/Google/Chrome/Default/History)')
+      .setDesc(`Path to your browser history database file (e.g., ${defaultPath})`)
       .addText(text => text
-        .setPlaceholder('Example: /Users/noy/Library/Application Support/Google/Chrome/Default/History')
-        .setValue(this.plugin.settings.sqlitePath)
+        .setPlaceholder(`Example: ${defaultPath}`)
+        .setValue(this.plugin.settings.sqlitePath!)
         .onChange(async (value) => {
           this.plugin.settings.sqlitePath = value
           await this.plugin.saveSettings()

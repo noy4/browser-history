@@ -31,7 +31,7 @@ export class BrowserHistory {
 
   async _load() {
     this.db = await DBClient.load({
-      sqlitePath: this.plugin.settings.sqlitePath,
+      sqlitePath: this.plugin.settings.sqlitePath || '',
     })
   }
 
