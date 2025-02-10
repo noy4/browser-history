@@ -6,15 +6,6 @@ import initSqlJs from 'sql.js'
 // eslint-disable-next-line antfu/no-import-dist, antfu/no-import-node-modules-by-path
 import sqlWasm from '../node_modules/sql.js/dist/sql-wasm.wasm'
 
-// urls
-// "id"
-// "url"
-// "title"
-// "visit_count"
-// "typed_count"
-// "last_visit_time"
-// "hidden"
-
 /**
  * Calculates the Unix epoch offset in milliseconds.
  *
@@ -79,18 +70,19 @@ export class DBClient {
   getUrls(params: GetUrlsParams) {
     const { fromDate, toDate, limit, desc = true } = params
     const whereClause = [
-      'last_visit_time != 0', // broken data?
-      fromDate && `${fromDate.getTime()} <= unix(last_visit_time)`,
-      toDate && `unix(last_visit_time) < ${toDate.getTime()}`,
+      fromDate && `${fromDate.getTime()} <= unix(visit_time)`,
+      toDate && `unix(visit_time) < ${toDate.getTime()}`,
     ].filter(Boolean).join(' and ')
 
     const query = `
       select
-        *,
-        unix(last_visit_time) as last_visit_time
-      from urls
+        urls.title,
+        urls.url,
+        unix(visits.visit_time) as visit_time
+      from visits
+      left join urls on visits.url = urls.id
       ${whereClause ? `where ${whereClause}` : ''}
-      order by last_visit_time ${desc ? 'desc' : 'asc'}
+      order by visits.id ${desc ? 'desc' : 'asc'}
       ${limit ? `limit ${limit}` : ''}
     `
     const results = this.db.exec(query)
@@ -100,7 +92,7 @@ export class DBClient {
 
   getUrlCount() {
     const query = `
-      select count(*) as count from urls
+      select count(*) as count from visits
     `
     const results = this.db.exec(query)
     const records = results.map(toRecords)[0] || []

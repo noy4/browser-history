@@ -67,7 +67,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           const count = this.plugin.history.db.getUrlCount().toLocaleString()
           const data = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
           const oldestDate = data
-            ? format(new Date(data.last_visit_time as number), 'yyyy-MM-dd')
+            ? format(new Date(data.visit_time as number), 'yyyy-MM-dd')
             : ''
 
           const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
