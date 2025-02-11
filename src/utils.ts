@@ -15,21 +15,3 @@ export class BrowserHistoryNotice extends Notice {
 export function notify(message: string) {
   new BrowserHistoryNotice(message)
 }
-
-type Result<T> = {
-  data: T
-  error: null
-} | {
-  data: null
-  error: Error
-}
-
-export function wrap<T>(fn: () => T): Result<T> {
-  try {
-    const data = fn()
-    return { data, error: null }
-  }
-  catch (e) {
-    return { data: null, error: e }
-  }
-}
