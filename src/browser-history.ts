@@ -113,7 +113,7 @@ export class BrowserHistory {
         await this.app.vault.createFolder(folderPath)
     }
 
-    let file = this.app.vault.getAbstractFileByPath(path) as TFile | null
+    let file = this.app.vault.getFileByPath(path)
     if (!file)
       file = await this.app.vault.create(path, data)
     else
