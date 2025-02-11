@@ -1,9 +1,11 @@
 import { Notice } from 'obsidian'
 
 const messageHeader = '[Browser History]'
+const debug = false
 
 export function log(message: string) {
-  console.log(`${messageHeader} ${message}`)
+  if (debug)
+    console.log(`${messageHeader} ${message}`)
 }
 
 export class BrowserHistoryNotice extends Notice {
