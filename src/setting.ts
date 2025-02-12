@@ -62,7 +62,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     }
     new Setting(this.containerEl)
       .setName('Database location')
-      .setDesc(`Path to your browser history database file (e.g., ${defaultPath})`)
+      .setDesc(`Path to your browser history database file. (e.g., ${defaultPath})`)
       .addText(text => text
         .setPlaceholder(`Example: ${defaultPath}`)
         .setValue(this.plugin.settings.sqlitePath!)
@@ -76,7 +76,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addCheckConnectionSetting() {
     new Setting(this.containerEl)
       .setName('Check connection')
-      .setDesc('Test the connection to your browser history database')
+      .setDesc('Test the connection to your browser history database.')
       .addButton(button => button
         .setButtonText('Check')
         .setCta()
@@ -113,7 +113,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addStartDateSetting() {
     return new Setting(this.containerEl)
       .setName('Start date')
-      .setDesc('Starting date for history note creation (automatically updates to today after sync)')
+      .setDesc('Starting date for history note creation. This automatically updates to today after sync.')
       .addText(text => text
         .setPlaceholder('Example: 2025-01-01')
         .setValue(this.plugin.settings.fromDate || format(startOfToday(), 'yyyy-MM-dd'))
@@ -127,7 +127,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addSyncSetting(startDateSetting: Setting) {
     new Setting(this.containerEl)
       .setName('Sync')
-      .setDesc('Create or update history notes from the specified start date')
+      .setDesc('Manually trigger the creation or update of history notes from the specified start date.')
       .addButton(button => button
         .setButtonText('Sync')
         .setCta()
@@ -146,7 +146,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addSyncOnStartupSetting() {
     new Setting(this.containerEl)
       .setName('Sync on startup')
-      .setDesc('Automatically sync history notes when Obsidian starts')
+      .setDesc('Sync history notes when Obsidian starts.')
       .addToggle(toggle => toggle
         .setValue(this.plugin.settings.syncOnStartup || false)
         .onChange(async (value) => {
@@ -159,7 +159,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   private addAutoSyncSetting() {
     new Setting(this.containerEl)
       .setName('Auto sync')
-      .setDesc('Set an interval for automatic history note synchronization')
+      .setDesc('Set an interval for automatic history note sync.')
       .addDropdown((dropdown) => {
         dropdown.addOption('-1', 'Disabled')
         dropdown.addOption(`${1000 * 60 * 1}`, '1 min')

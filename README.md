@@ -25,7 +25,7 @@ Path to your browser history database file. Examples:
 - Brave: `/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History`
 
 ### Check Connection
-Test the connection to your browser history database. Shows the total number of records and the oldest record date when successful.
+Test the connection to your browser history database.
 
 ### New File Location
 Directory where your browser history notes will be saved. **Warning**: Please select a different folder than your daily notes to avoid any conflicts. Default: `Browser History`
