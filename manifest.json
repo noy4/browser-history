@@ -1,7 +1,7 @@
 {
   "id": "browser-history",
   "name": "Browser History",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "minAppVersion": "0.15.0",
   "description": "Sync your browser history to Obsidian notes.",
   "author": "noy4",
