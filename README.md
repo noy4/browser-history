@@ -1,4 +1,4 @@
-# Obsidian Browser History
+# Browser History Plugin for Obsidian
 
 Sync your browser history to Obsidian notes.
 
