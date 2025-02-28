@@ -19,9 +19,10 @@ export default class BrowserHistoryPlugin extends Plugin {
     this.addSettingTab(new BrowserHistorySettingTab(this.app, this))
 
     // sync on startup
-    // load after 1s to avoid > Error: Folder already exists.
-    if (this.settings.syncOnStartup)
-      setTimeout(() => this.history.syncNotes(), 1000)
+    this.app.workspace.onLayoutReady(() => {
+      if (this.settings.syncOnStartup)
+        this.history.syncNotes()
+    })
 
     // auto sync
     if ((this.settings.autoSyncMs || -1) > 0) {
