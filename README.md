@@ -1,6 +1,6 @@
 # Browser History Plugin for Obsidian
 
-Sync your browser history to Obsidian notes.
+Sync your browser history to notes.
 
 <img src="assets/browser_history_preview.png" alt="Browser History" width="600"/>
 
