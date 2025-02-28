@@ -16,6 +16,7 @@ Sync your browser history to Obsidian notes.
 
 ## !!Caution!!
 - **Do not publish history notes.** The URLs in the notes may contain authentication information.
+- Some antivirus software may flag this plugin as suspicious due to its access to browser data. This is a false positive as the plugin only reads the browser's history database file.
 
 ## Settings
 
