@@ -152,18 +152,6 @@ export function getFirefoxHistoryPath(): string {
     return profiles[0].path
   }
 
-  // Fallback to wildcard path for backward compatibility
-  const username = userInfo().username
-
-  if (platform === 'darwin')
-    return `/Users/${username}/Library/Application Support/Firefox/Profiles/*/places.sqlite`
-
-  if (platform === 'win32')
-    return `C:\\Users\\${username}\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\*\\places.sqlite`
-
-  if (platform === 'linux')
-    return `/home/${username}/.mozilla/firefox/*/places.sqlite`
-
   return ''
 }
 
