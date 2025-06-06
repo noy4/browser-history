@@ -5,7 +5,7 @@ import initSqlJs from 'sql.js'
 // @ts-expect-error wasm binary
 // eslint-disable-next-line antfu/no-import-dist, antfu/no-import-node-modules-by-path
 import sqlWasm from '../node_modules/sql.js/dist/sql-wasm.wasm'
-import { BrowserType, detectBrowserType } from './browser-detector'
+import { BrowserType, detectBrowserType } from './browser'
 
 /**
  * Converts a Chrome timestamp (microseconds since 1601-01-01) to a Unix timestamp (milliseconds since 1970-01-01).
