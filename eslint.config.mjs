@@ -1,6 +1,9 @@
 import antfu from '@antfu/eslint-config'
 
 export default antfu({
+  ignores: [
+    'versions.json',
+  ],
   rules: {
     'no-console': 'off', // allow console.log()
     'no-new': 'off', // allow new Notice()
