@@ -1,4 +1,6 @@
+import { existsSync, readdirSync } from 'node:fs'
 import { userInfo } from 'node:os'
+import { join } from 'node:path'
 import { platform } from 'node:process'
 
 /**
@@ -9,6 +11,15 @@ export enum BrowserType {
   FIREFOX = 'firefox',
   BRAVE = 'brave',
   UNKNOWN = 'unknown',
+}
+
+/**
+ * Firefox profile information
+ */
+export interface FirefoxProfile {
+  name: string
+  path: string
+  isDefault: boolean
 }
 
 /**
@@ -61,10 +72,87 @@ export function getChromeHistoryPath(): string {
 }
 
 /**
+ * Get Firefox profiles directory for current platform
+ * @returns Firefox profiles directory path
+ */
+export function getFirefoxProfilesDirectory(): string {
+  const username = userInfo().username
+
+  if (platform === 'darwin')
+    return `/Users/${username}/Library/Application Support/Firefox/Profiles`
+
+  if (platform === 'win32')
+    return `C:\\Users\\${username}\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles`
+
+  if (platform === 'linux')
+    return `/home/${username}/.mozilla/firefox`
+
+  return ''
+}
+
+/**
+ * Get all Firefox profiles
+ * @returns Array of Firefox profile information
+ */
+export function getFirefoxProfiles(): FirefoxProfile[] {
+  const profilesDir = getFirefoxProfilesDirectory()
+
+  if (!profilesDir || !existsSync(profilesDir)) {
+    return []
+  }
+
+  try {
+    const profiles: FirefoxProfile[] = []
+    const entries = readdirSync(profilesDir, { withFileTypes: true })
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const profilePath = join(profilesDir, entry.name)
+        const placesPath = join(profilePath, 'places.sqlite')
+
+        // Check if places.sqlite exists in this directory
+        if (existsSync(placesPath)) {
+          // Extract profile name from directory name
+          // Firefox profile directories are typically named like "xxxxxxxx.profile-name"
+          const match = entry.name.match(/^[a-z0-9]+\.(.+)$/)
+          const profileName = match ? match[1] : entry.name
+
+          profiles.push({
+            name: profileName,
+            path: placesPath,
+            isDefault: entry.name.includes('default') || profiles.length === 0,
+          })
+        }
+      }
+    }
+
+    return profiles
+  }
+  catch (error) {
+    console.error('Error reading Firefox profiles:', error)
+    return []
+  }
+}
+
+/**
  * Get default Firefox history path for current platform
  * @returns Firefox history database path
  */
 export function getFirefoxHistoryPath(): string {
+  const profiles = getFirefoxProfiles()
+
+  // Return the default profile path if available
+  const defaultProfile = profiles.find(p => p.isDefault)
+  if (defaultProfile) {
+    return defaultProfile.path
+  }
+
+  // Return the first profile if no default found
+  if (profiles.length > 0) {
+    return profiles[0].path
+  }
+
+  // Fallback to wildcard path for backward compatibility
   const username = userInfo().username
 
   if (platform === 'darwin')
