@@ -5,6 +5,7 @@ import initSqlJs from 'sql.js'
 // @ts-expect-error wasm binary
 // eslint-disable-next-line antfu/no-import-dist, antfu/no-import-node-modules-by-path
 import sqlWasm from '../node_modules/sql.js/dist/sql-wasm.wasm'
+import { BrowserType, detectBrowserType } from './browser-detector'
 
 /**
  * Calculates the Unix epoch offset in milliseconds.
@@ -28,6 +29,15 @@ const UNIX_EPOCH_OFFSET = getUnixEpochOffset()
  */
 function chromeTimeToUnixTime(chromeTimestamp: number) {
   return chromeTimestamp / 1000 - UNIX_EPOCH_OFFSET
+}
+
+/**
+ * Converts a Firefox timestamp (microseconds since 1970-01-01) to a Unix timestamp (milliseconds since 1970-01-01).
+ * @param {number} firefoxTimestamp The Firefox timestamp in microseconds.
+ * @returns {number} The Unix timestamp in milliseconds.
+ */
+function firefoxTimeToUnixTime(firefoxTimestamp: number) {
+  return firefoxTimestamp / 1000 // Firefox uses microseconds, so divide by 1000
 }
 
 function toRecords(
@@ -54,46 +64,94 @@ interface LoadOptions {
 
 export class DBClient {
   db: Database
+  browserType: BrowserType
 
-  constructor(db: Database) {
+  constructor(db: Database, browserType: BrowserType) {
     this.db = db
+    this.browserType = browserType
   }
 
   static async load(options: LoadOptions) {
     const SQL = await initSqlJs({ wasmBinary: sqlWasm })
     const dbBuffer = fs.readFileSync(options.sqlitePath)
     const db = new SQL.Database(dbBuffer)
-    db.create_function('unix', chromeTimeToUnixTime)
-    return new DBClient(db)
+
+    // Determine browser type
+    const browserType = detectBrowserType(options.sqlitePath)
+
+    // Register functions based on browser type
+    if (browserType === BrowserType.FIREFOX) {
+      db.create_function('firefox_unix', firefoxTimeToUnixTime)
+    }
+    else {
+      db.create_function('unix', chromeTimeToUnixTime)
+    }
+
+    return new DBClient(db, browserType)
   }
 
   getUrls(params: GetUrlsParams) {
     const { fromDate, toDate, limit, desc = true } = params
-    const whereClause = [
-      fromDate && `${fromDate.getTime()} <= unix(visit_time)`,
-      toDate && `unix(visit_time) < ${toDate.getTime()}`,
-    ].filter(Boolean).join(' and ')
 
-    const query = `
-      select
-        urls.title,
-        urls.url,
-        unix(visits.visit_time) as visit_time
-      from visits
-      left join urls on visits.url = urls.id
-      ${whereClause ? `where ${whereClause}` : ''}
-      order by visits.id ${desc ? 'desc' : 'asc'}
-      ${limit ? `limit ${limit}` : ''}
-    `
-    const results = this.db.exec(query)
-    const records = results.map(toRecords)[0] || []
-    return records
+    if (this.browserType === BrowserType.FIREFOX) {
+      // Query for Firefox
+      const whereClause = [
+        fromDate && `${fromDate.getTime()} <= firefox_unix(moz_historyvisits.visit_date)`,
+        toDate && `firefox_unix(moz_historyvisits.visit_date) < ${toDate.getTime()}`,
+      ].filter(Boolean).join(' and ')
+
+      const query = `
+        SELECT moz_places.title, moz_places.url, firefox_unix(moz_historyvisits.visit_date) as visit_time
+        FROM moz_historyvisits
+        LEFT JOIN moz_places ON moz_historyvisits.place_id = moz_places.id
+        ${whereClause ? `WHERE ${whereClause}` : ''}
+        ORDER BY moz_historyvisits.visit_date ${desc ? 'DESC' : 'ASC'}
+        ${limit ? `LIMIT ${limit}` : ''}
+      `
+      const results = this.db.exec(query)
+      const records = results.map(toRecords)[0] || []
+      return records
+    }
+    else {
+      // Query for Chrome
+      const whereClause = [
+        fromDate && `${fromDate.getTime()} <= unix(visit_time)`,
+        toDate && `unix(visit_time) < ${toDate.getTime()}`,
+      ].filter(Boolean).join(' and ')
+
+      const query = `
+        select
+          urls.title,
+          urls.url,
+          unix(visits.visit_time) as visit_time
+        from visits
+        left join urls on visits.url = urls.id
+        ${whereClause ? `where ${whereClause}` : ''}
+        order by visits.id ${desc ? 'desc' : 'asc'}
+        ${limit ? `limit ${limit}` : ''}
+      `
+      const results = this.db.exec(query)
+      const records = results.map(toRecords)[0] || []
+      return records
+    }
   }
 
   getUrlCount() {
-    const query = `
-      select count(*) as count from visits
-    `
+    let query = ''
+
+    if (this.browserType === BrowserType.FIREFOX) {
+      // Query for Firefox
+      query = `
+        SELECT count(*) as count FROM moz_historyvisits
+      `
+    }
+    else {
+      // Query for Chrome
+      query = `
+        select count(*) as count from visits
+      `
+    }
+
     const results = this.db.exec(query)
     const records = results.map(toRecords)[0] || []
     return records[0]?.count as number || 0
