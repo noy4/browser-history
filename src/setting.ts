@@ -1,12 +1,12 @@
 import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { userInfo } from 'node:os'
-import { platform } from 'node:process'
 import { format, startOfToday } from 'date-fns'
 import { PluginSettingTab, Setting } from 'obsidian'
+import { BrowserType, getDefaultBrowserPath } from './browser-detector'
 import { notify } from './utils'
 
 export interface BrowserHistoryPluginSettings {
+  selectedBrowser?: BrowserType
   sqlitePath?: string
   folderPath: string
   fromDate?: string
@@ -14,23 +14,9 @@ export interface BrowserHistoryPluginSettings {
   autoSyncMs?: number
 }
 
-function getDefaultChromeHistoryPath() {
-  const username = userInfo().username
-
-  if (platform === 'darwin')
-    return `/Users/${username}/Library/Application Support/Google/Chrome/Default/History`
-
-  if (platform === 'win32')
-    return `C:\\Users\\${username}\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\History`
-
-  if (platform === 'linux')
-    return `/home/${username}/.config/google-chrome/Default/History`
-
-  return ''
-}
-
 export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
   folderPath: 'Browser History',
+  selectedBrowser: BrowserType.CHROME,
 }
 
 export class BrowserHistorySettingTab extends PluginSettingTab {
@@ -45,6 +31,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     const { containerEl } = this
     containerEl.empty()
 
+    this.addBrowserSelectionSetting()
     this.addDatabaseLocationSetting()
     this.addCheckConnectionSetting()
     this.addFileLocationSetting()
@@ -54,15 +41,40 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     this.addAutoSyncSetting()
   }
 
+  private addBrowserSelectionSetting() {
+    new Setting(this.containerEl)
+      .setName('Browser selection')
+      .setDesc('Select your browser to automatically set the database path.')
+      .addDropdown(dropdown => dropdown
+        .addOption(BrowserType.CHROME, 'Chrome')
+        .addOption(BrowserType.FIREFOX, 'Firefox')
+        .addOption('manual', 'Manual (Custom Path)')
+        .setValue(this.plugin.settings.selectedBrowser || BrowserType.CHROME)
+        .onChange(async (value) => {
+          this.plugin.settings.selectedBrowser = value as BrowserType
+          // Auto-update the database path when browser is selected
+          this.plugin.settings.sqlitePath = getDefaultBrowserPath(value as BrowserType)
+          await this.plugin.saveSettings()
+          // Refresh the display to update the database path field
+          this.display()
+        }),
+      )
+  }
+
   private addDatabaseLocationSetting() {
-    const defaultPath = getDefaultChromeHistoryPath()
+    // Get default path based on selected browser or fallback to Chrome
+    const selectedBrowser = this.plugin.settings.selectedBrowser || BrowserType.CHROME
+    const defaultPath = getDefaultBrowserPath(selectedBrowser)
+
+    // Auto-set path if not already set
     if (!this.plugin.settings.sqlitePath) {
       this.plugin.settings.sqlitePath = defaultPath
       this.plugin.saveSettings()
     }
+
     new Setting(this.containerEl)
       .setName('Database location')
-      .setDesc(`Path to your browser history database file. (e.g., ${defaultPath})`)
+      .setDesc(`Path to your browser history database file.`)
       .addText(text => text
         .setPlaceholder(`Example: ${defaultPath}`)
         .setValue(this.plugin.settings.sqlitePath!)

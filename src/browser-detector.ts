@@ -1,3 +1,6 @@
+import { userInfo } from 'node:os'
+import { platform } from 'node:process'
+
 /**
  * Browser type enumeration
  */
@@ -29,4 +32,58 @@ export function detectBrowserType(path: string): BrowserType {
   }
 
   return BrowserType.UNKNOWN
+}
+
+/**
+ * Get default Chrome history path for current platform
+ * @returns Chrome history database path
+ */
+export function getChromeHistoryPath(): string {
+  const username = userInfo().username
+
+  if (platform === 'darwin')
+    return `/Users/${username}/Library/Application Support/Google/Chrome/Default/History`
+
+  if (platform === 'win32')
+    return `C:\\Users\\${username}\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\History`
+
+  if (platform === 'linux')
+    return `/home/${username}/.config/google-chrome/Default/History`
+
+  return ''
+}
+
+/**
+ * Get default Firefox history path for current platform
+ * @returns Firefox history database path
+ */
+export function getFirefoxHistoryPath(): string {
+  const username = userInfo().username
+
+  if (platform === 'darwin')
+    return `/Users/${username}/Library/Application Support/Firefox/Profiles/*/places.sqlite`
+
+  if (platform === 'win32')
+    return `C:\\Users\\${username}\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\*\\places.sqlite`
+
+  if (platform === 'linux')
+    return `/home/${username}/.mozilla/firefox/*/places.sqlite`
+
+  return ''
+}
+
+/**
+ * Get default browser path based on browser type
+ * @param browserType Browser type to get path for
+ * @returns Default path for the specified browser
+ */
+export function getDefaultBrowserPath(browserType: BrowserType): string {
+  switch (browserType) {
+    case BrowserType.CHROME:
+      return getChromeHistoryPath()
+    case BrowserType.FIREFOX:
+      return getFirefoxHistoryPath()
+    default:
+      return getChromeHistoryPath()
+  }
 }
