@@ -7,6 +7,7 @@ import { platform } from 'node:process'
 export enum BrowserType {
   CHROME = 'chrome',
   FIREFOX = 'firefox',
+  BRAVE = 'brave',
   UNKNOWN = 'unknown',
 }
 
@@ -17,6 +18,12 @@ export enum BrowserType {
  */
 export function detectBrowserType(path: string): BrowserType {
   const lowercasePath = path.toLowerCase()
+
+  // Brave detection logic (check before Chrome since Brave uses similar paths)
+  if (lowercasePath.includes('brave')
+    || lowercasePath.includes('brave-browser')) {
+    return BrowserType.BRAVE
+  }
 
   // Chrome detection logic
   if (lowercasePath.includes('chrome')
@@ -73,6 +80,25 @@ export function getFirefoxHistoryPath(): string {
 }
 
 /**
+ * Get default Brave history path for current platform
+ * @returns Brave history database path
+ */
+export function getBraveHistoryPath(): string {
+  const username = userInfo().username
+
+  if (platform === 'darwin')
+    return `/Users/${username}/Library/Application Support/BraveSoftware/Brave-Browser/Default/History`
+
+  if (platform === 'win32')
+    return `C:\\Users\\${username}\\AppData\\Local\\BraveSoftware\\Brave-Browser\\User Data\\Default\\History`
+
+  if (platform === 'linux')
+    return `/home/${username}/.config/BraveSoftware/Brave-Browser/Default/History`
+
+  return ''
+}
+
+/**
  * Get default browser path based on browser type
  * @param browserType Browser type to get path for
  * @returns Default path for the specified browser
@@ -83,6 +109,8 @@ export function getDefaultBrowserPath(browserType: BrowserType): string {
       return getChromeHistoryPath()
     case BrowserType.FIREFOX:
       return getFirefoxHistoryPath()
+    case BrowserType.BRAVE:
+      return getBraveHistoryPath()
     default:
       return getChromeHistoryPath()
   }

@@ -57,6 +57,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       .addDropdown(dropdown => dropdown
         .addOption(BrowserType.CHROME, 'Chrome')
         .addOption(BrowserType.FIREFOX, 'Firefox')
+        .addOption(BrowserType.BRAVE, 'Brave')
         .addOption('manual', 'Manual (Custom Path)')
         .setValue(this.plugin.settings.selectedBrowser || BrowserType.CHROME)
         .onChange(async (value) => {
