@@ -103,7 +103,7 @@ export function getBraveHistoryPath(): string {
  * @param browserType Browser type to get path for
  * @returns Default path for the specified browser
  */
-export function getDefaultBrowserPath(browserType: BrowserType): string {
+export function getDefaultBrowserPath(browserType?: BrowserType): string {
   switch (browserType) {
     case BrowserType.CHROME:
       return getChromeHistoryPath()

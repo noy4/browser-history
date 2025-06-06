@@ -2,11 +2,10 @@ import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { format, startOfToday } from 'date-fns'
 import { PluginSettingTab, Setting } from 'obsidian'
-import { BrowserType, getDefaultBrowserPath } from './browser-detector'
+import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser-detector'
 import { notify } from './utils'
 
 export interface BrowserHistoryPluginSettings {
-  selectedBrowser?: BrowserType
   sqlitePath?: string
   folderPath: string
   fromDate?: string
@@ -16,7 +15,6 @@ export interface BrowserHistoryPluginSettings {
 
 export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
   folderPath: 'Browser History',
-  selectedBrowser: BrowserType.CHROME,
 }
 
 export class BrowserHistorySettingTab extends PluginSettingTab {
@@ -41,15 +39,15 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
   }
 
   private addDatabaseLocationSetting() {
-    // Get default path based on selected browser or fallback to Chrome
-    const selectedBrowser = this.plugin.settings.selectedBrowser || BrowserType.CHROME
-    const defaultPath = getDefaultBrowserPath(selectedBrowser)
+    const defaultPath = getDefaultBrowserPath()
 
     // Auto-set path if not already set
     if (!this.plugin.settings.sqlitePath) {
-      this.plugin.settings.sqlitePath = defaultPath
+      this.plugin.settings.sqlitePath = getDefaultBrowserPath()
       this.plugin.saveSettings()
     }
+
+    const selectedBrowser = detectBrowserType(this.plugin.settings.sqlitePath) || BrowserType.CHROME
 
     new Setting(this.containerEl)
       .setName('Database location')
@@ -58,10 +56,9 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
         .addOption(BrowserType.CHROME, 'Chrome')
         .addOption(BrowserType.FIREFOX, 'Firefox')
         .addOption(BrowserType.BRAVE, 'Brave')
-        .addOption('manual', 'Manual (Custom Path)')
-        .setValue(this.plugin.settings.selectedBrowser || BrowserType.CHROME)
+        .addOption(BrowserType.UNKNOWN, 'Manual (Custom Path)')
+        .setValue(selectedBrowser)
         .onChange(async (value) => {
-          this.plugin.settings.selectedBrowser = value as BrowserType
           // Auto-update the database path when browser is selected
           this.plugin.settings.sqlitePath = getDefaultBrowserPath(value as BrowserType)
           await this.plugin.saveSettings()
