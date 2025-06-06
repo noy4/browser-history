@@ -10,7 +10,7 @@ Sync your browser history to notes.
 2. Go to the plugin settings.
 3. Configure the database location, and click `Check` button to verify database access.
     <img src="assets/browser_history_setting.png" alt="Settings" width="600"/>
-4. Click "Open today's browser history" in the ribbon.
+4. Click "Open today's browser history" in the ribbon.  
     <img src="assets/browser_history_ribbon.png" alt="Ribbon" width="300"/>
 5. Optionally enable auto sync features
 
@@ -21,9 +21,7 @@ Sync your browser history to notes.
 ## Settings
 
 ### Database Location
-Path to your browser history database file. Examples:
-- Chrome: `/Users/noy/Library/Application Support/Google/Chrome/Default/History`
-- Brave: `/Users/noy/Library/Application Support/BraveSoftware/Brave-Browser/Default/History`
+Path to your browser history database file.
 
 ### Check Connection
 Test the connection to your browser history database.
