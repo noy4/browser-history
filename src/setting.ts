@@ -31,7 +31,6 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     const { containerEl } = this
     containerEl.empty()
 
-    this.addBrowserSelectionSetting()
     this.addDatabaseLocationSetting()
     this.addCheckConnectionSetting()
     this.addFileLocationSetting()
@@ -39,26 +38,6 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     this.addSyncSetting(startDateSetting)
     this.addSyncOnStartupSetting()
     this.addAutoSyncSetting()
-  }
-
-  private addBrowserSelectionSetting() {
-    new Setting(this.containerEl)
-      .setName('Browser selection')
-      .setDesc('Select your browser to automatically set the database path.')
-      .addDropdown(dropdown => dropdown
-        .addOption(BrowserType.CHROME, 'Chrome')
-        .addOption(BrowserType.FIREFOX, 'Firefox')
-        .addOption('manual', 'Manual (Custom Path)')
-        .setValue(this.plugin.settings.selectedBrowser || BrowserType.CHROME)
-        .onChange(async (value) => {
-          this.plugin.settings.selectedBrowser = value as BrowserType
-          // Auto-update the database path when browser is selected
-          this.plugin.settings.sqlitePath = getDefaultBrowserPath(value as BrowserType)
-          await this.plugin.saveSettings()
-          // Refresh the display to update the database path field
-          this.display()
-        }),
-      )
   }
 
   private addDatabaseLocationSetting() {
@@ -74,7 +53,22 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
 
     new Setting(this.containerEl)
       .setName('Database location')
-      .setDesc(`Path to your browser history database file.`)
+      .setDesc(`Path to your browser history database file. Select your browser to automatically set the database path.`)
+      .addDropdown(dropdown => dropdown
+        .addOption(BrowserType.CHROME, 'Chrome')
+        .addOption(BrowserType.FIREFOX, 'Firefox')
+        .addOption('manual', 'Manual (Custom Path)')
+        .setValue(this.plugin.settings.selectedBrowser || BrowserType.CHROME)
+        .onChange(async (value) => {
+          this.plugin.settings.selectedBrowser = value as BrowserType
+          // Auto-update the database path when browser is selected
+          this.plugin.settings.sqlitePath = getDefaultBrowserPath(value as BrowserType)
+          await this.plugin.saveSettings()
+          // Update the text input value
+          const inputEl = dropdown.selectEl.nextElementSibling as HTMLInputElement
+          inputEl.value = this.plugin.settings.sqlitePath
+        }),
+      )
       .addText(text => text
         .setPlaceholder(`Example: ${defaultPath}`)
         .setValue(this.plugin.settings.sqlitePath!)
