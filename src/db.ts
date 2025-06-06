@@ -8,36 +8,16 @@ import sqlWasm from '../node_modules/sql.js/dist/sql-wasm.wasm'
 import { BrowserType, detectBrowserType } from './browser-detector'
 
 /**
- * Calculates the Unix epoch offset in milliseconds.
+ * Converts a Chrome timestamp (microseconds since 1601-01-01) to a Unix timestamp (milliseconds since 1970-01-01).
  *
  * ref. [sqlite - What is the format of Chrome's timestamps? - Stack Overflow](https://stackoverflow.com/questions/20458406/what-is-the-format-of-chromes-timestamps)
- *
- * @returns {number} The Unix epoch offset.
- */
-function getUnixEpochOffset() {
-  const epoch1970 = new Date('1970-01-01T00:00:00Z')
-  const epoch1601 = new Date('1601-01-01T00:00:00Z')
-  return epoch1970.getTime() - epoch1601.getTime() // 11644473600000
-}
-
-const UNIX_EPOCH_OFFSET = getUnixEpochOffset()
-
-/**
- * Converts a Chrome timestamp (microseconds since 1601-01-01) to a Unix timestamp (milliseconds since 1970-01-01).
- * @param {number} chromeTimestamp The Chrome timestamp in microseconds.
- * @returns {number} The Unix timestamp in milliseconds.
  */
 function chromeTimeToUnixTime(chromeTimestamp: number) {
-  return chromeTimestamp / 1000 - UNIX_EPOCH_OFFSET
+  return chromeTimestamp / 1000 - 11644473600000
 }
 
-/**
- * Converts a Firefox timestamp (microseconds since 1970-01-01) to a Unix timestamp (milliseconds since 1970-01-01).
- * @param {number} firefoxTimestamp The Firefox timestamp in microseconds.
- * @returns {number} The Unix timestamp in milliseconds.
- */
-function firefoxTimeToUnixTime(firefoxTimestamp: number) {
-  return firefoxTimestamp / 1000 // Firefox uses microseconds, so divide by 1000
+function firefoxTimeToUnixTime(firefoxTimestamp: number): number {
+  return firefoxTimestamp / 1000
 }
 
 function toRecords(
