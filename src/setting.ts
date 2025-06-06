@@ -2,7 +2,7 @@ import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { format, startOfToday } from 'date-fns'
 import { PluginSettingTab, Setting } from 'obsidian'
-import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser-detector'
+import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
 import { notify } from './utils'
 
 export interface BrowserHistoryPluginSettings {
