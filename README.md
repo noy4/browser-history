@@ -8,9 +8,9 @@ Sync your browser history to notes.
 
 1. Install and enable the plugin.
 2. Go to the plugin settings.
-3. Configure the database location, and click "Check Connection" button to verify database access.
+3. Configure the database location, and click `Check` button to verify database access.
     <img src="assets/browser_history_setting.png" alt="Settings" width="600"/>
-4. Click "Open today's browser history" in the ribbon.  
+4. Click "Open today's browser history" in the ribbon.
     <img src="assets/browser_history_ribbon.png" alt="Ribbon" width="300"/>
 5. Optionally enable auto sync features
 
