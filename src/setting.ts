@@ -1,6 +1,7 @@
 import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { format, startOfToday } from 'date-fns'
+import dayjs from 'dayjs'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
 import { notify } from './utils'
@@ -11,6 +12,7 @@ export interface BrowserHistoryPluginSettings {
   fromDate?: string
   syncOnStartup?: boolean
   autoSyncMs?: number
+  fileNameFormat?: string
 }
 
 export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
@@ -32,6 +34,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     this.addDatabaseLocationSetting()
     this.addCheckConnectionSetting()
     this.addFileLocationSetting()
+    this.addFileNameFormatSetting()
     const startDateSetting = this.addStartDateSetting()
     this.addSyncSetting(startDateSetting)
     this.addSyncOnStartupSetting()
@@ -112,6 +115,43 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           await this.plugin.saveSettings()
         }),
       )
+  }
+
+  private addFileNameFormatSetting() {
+    let previewEl: HTMLElement
+
+    new Setting(this.containerEl)
+      .setName('File name format')
+      .setDesc(createFragment((frag) => {
+        frag.appendText('Example: YYYY-MM-DD, [Browser History] YYYY-MM-DD')
+        frag.createEl('br')
+        frag.appendText('For more syntax, refer to ')
+        frag.createEl('a', {
+          text: 'format reference',
+          href: 'https://momentjs.com/docs/#/displaying/format/',
+        })
+        frag.createEl('br')
+        frag.appendText('Your current syntax looks like this: ')
+        previewEl = frag.createEl('b', { cls: 'u-pop' })
+      }))
+      .addText(text => text
+        .setPlaceholder('YYYY-MM-DD')
+        .setValue(this.plugin.settings.fileNameFormat || 'YYYY-MM-DD')
+        .onChange(async (value) => {
+          this.plugin.settings.fileNameFormat = value
+          await this.plugin.saveSettings()
+          updatePreviewDisplay(previewEl, value)
+        }),
+      )
+
+    // Initial preview display
+    const currentValue = this.plugin.settings.fileNameFormat || ''
+    updatePreviewDisplay(previewEl!, currentValue)
+
+    function updatePreviewDisplay(container: HTMLElement, template: string) {
+      const previewText = dayjs().format(template || 'YYYY-MM-DD')
+      container.textContent = `${previewText}.md`
+    }
   }
 
   private addStartDateSetting() {

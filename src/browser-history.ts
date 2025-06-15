@@ -1,6 +1,7 @@
 import type { App, TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { addDays, differenceInDays, format, startOfDay, startOfToday, subDays } from 'date-fns'
+import dayjs from 'dayjs'
 import { DBClient } from './db'
 import { log, notify } from './utils'
 
@@ -79,8 +80,9 @@ export class BrowserHistory {
     if (load)
       await this._load()
 
-    const title = format(date, 'yyyy-MM-dd')
-    const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
+    const template = this.plugin.settings.fileNameFormat || 'YYYY-MM-DD'
+    const fileName = dayjs(date).format(template)
+    const path = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
 
     const records = this.db.getUrls({
       fromDate: date,
@@ -89,7 +91,7 @@ export class BrowserHistory {
 
     // return if no history
     if (!records.length) {
-      log(`no history for ${title}`)
+      log(`no history for ${fileName}`)
       return
     }
 
