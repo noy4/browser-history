@@ -2,11 +2,13 @@ import type { BrowserHistoryPluginSettings } from './setting'
 import { Plugin } from 'obsidian'
 import { BrowserHistory, openTodayHistory } from './browser-history'
 import { BrowserHistorySettingTab, DEFAULT_SETTINGS } from './setting'
+import { DBClient } from './db'
 
 export default class BrowserHistoryPlugin extends Plugin {
   settings: BrowserHistoryPluginSettings
   history = new BrowserHistory(this)
   autoSyncId: number | undefined
+  db: DBClient
 
   async onload() {
     await this.loadSettings()

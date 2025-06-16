@@ -4,31 +4,27 @@ import { dayjs } from './dayjs'
 import { DBClient } from './db'
 import { log, notify } from './utils'
 
+export async function loadDB(plugin: BrowserHistoryPlugin) {
+  try {
+    return plugin.db = await DBClient.load({
+      sqlitePath: plugin.settings.sqlitePath || '',
+    })
+  }
+  catch (e) {
+    notify(`Failed to load database: ${e}`)
+  }
+}
+
 export class BrowserHistory {
   plugin: BrowserHistoryPlugin
-  app: App
-  db: DBClient
 
   constructor(plugin: BrowserHistoryPlugin) {
     this.plugin = plugin
-    this.app = plugin.app
-  }
-
-  async load() {
-    try {
-      this.db = await DBClient.load({
-        sqlitePath: this.plugin.settings.sqlitePath || '',
-      })
-      return true
-    }
-    catch (e) {
-      notify(`Failed to load: ${e}`)
-    }
   }
 
   async syncNotes() {
-    const loaded = await this.load()
-    if (!loaded)
+    const db = await loadDB(this.plugin)
+    if (!db)
       return
 
     const today = dayjs().startOf('day').toDate()
@@ -67,7 +63,7 @@ export class BrowserHistory {
     const fileName = dayjs(date).format(template)
     const filePath = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
 
-    const records = this.db.getUrls({
+    const records = this.plugin.db.getUrls({
       fromDate: date,
       toDate: dayjs(date).add(1, 'day').toDate(),
     })
@@ -88,13 +84,12 @@ export class BrowserHistory {
 }
 
 export async function checkConnection(plugin: BrowserHistoryPlugin) {
-  const { history } = plugin
-  const loaded = await history.load()
-  if (!loaded)
+  const db = await loadDB(plugin)
+  if (!db)
     return
 
-  const count = history.db.getUrlCount().toLocaleString()
-  const data = history.db.getUrls({ limit: 1, desc: false }).at(0)
+  const count = db.getUrlCount().toLocaleString()
+  const data = db.getUrls({ limit: 1, desc: false }).at(0)
   const oldestDate = data
     ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
     : ''
@@ -108,8 +103,8 @@ export async function openTodayHistory(
   newLeaf?: boolean,
 ) {
   const { app, history } = plugin
-  const loaded = await history.load()
-  if (!loaded)
+  const db = await loadDB(plugin)
+  if (!db)
     return
 
   const todayFile = await history.syncNote()
