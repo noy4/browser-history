@@ -33,6 +33,7 @@ Directory where your browser history notes will be saved. **Warning**: Please se
 Examples:
 - `YYYY-MM-DD` (default) → `2025-06-16.md`
 - `[Browser History] YYYY-MM-DD` → `Browser History 2025-06-16.md`
+
 For more syntax, refer to [format reference](https://momentjs.com/docs/#/displaying/format/)
 
 ### Start Date
