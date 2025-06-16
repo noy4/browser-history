@@ -19,6 +19,24 @@ export async function loadDB(plugin: BrowserHistoryPlugin) {
 }
 
 /**
+ * Tests database connection.
+ */
+export async function checkConnection(plugin: BrowserHistoryPlugin) {
+  const db = await loadDB(plugin)
+  if (!db)
+    return
+
+  const count = db.getUrlCount().toLocaleString()
+  const data = db.getUrls({ limit: 1, desc: false }).at(0)
+  const oldestDate = data
+    ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
+    : ''
+
+  const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
+  notify(message)
+}
+
+/**
  * Syncs browser history notes for the specified date range.
  */
 export async function syncNotes(plugin: BrowserHistoryPlugin) {
@@ -86,24 +104,6 @@ async function _syncNote(
   }).join('\n')
 
   return upsertFile(plugin, { filePath, content })
-}
-
-/**
- * Tests database connection.
- */
-export async function checkConnection(plugin: BrowserHistoryPlugin) {
-  const db = await loadDB(plugin)
-  if (!db)
-    return
-
-  const count = db.getUrlCount().toLocaleString()
-  const data = db.getUrls({ limit: 1, desc: false }).at(0)
-  const oldestDate = data
-    ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
-    : ''
-
-  const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
-  notify(message)
 }
 
 /**
