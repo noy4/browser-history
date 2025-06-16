@@ -1,8 +1,8 @@
 import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { format, startOfToday } from 'date-fns'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
+import { dayjs } from './dayjs'
 import { notify } from './utils'
 
 export interface BrowserHistoryPluginSettings {
@@ -11,6 +11,7 @@ export interface BrowserHistoryPluginSettings {
   fromDate?: string
   syncOnStartup?: boolean
   autoSyncMs?: number
+  fileNameFormat?: string
 }
 
 export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
@@ -32,6 +33,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
     this.addDatabaseLocationSetting()
     this.addCheckConnectionSetting()
     this.addFileLocationSetting()
+    this.addFileNameFormatSetting()
     const startDateSetting = this.addStartDateSetting()
     this.addSyncSetting(startDateSetting)
     this.addSyncOnStartupSetting()
@@ -92,7 +94,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           const count = this.plugin.history.db.getUrlCount().toLocaleString()
           const data = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
           const oldestDate = data
-            ? format(new Date(data.visit_time as number), 'yyyy-MM-dd')
+            ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
             : ''
 
           const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
@@ -114,13 +116,50 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       )
   }
 
+  private addFileNameFormatSetting() {
+    let previewEl: HTMLElement
+
+    new Setting(this.containerEl)
+      .setName('File name format')
+      .setDesc(createFragment((frag) => {
+        frag.appendText('Example: YYYY-MM-DD, [Browser History] YYYY-MM-DD')
+        frag.createEl('br')
+        frag.appendText('For more syntax, refer to ')
+        frag.createEl('a', {
+          text: 'format reference',
+          href: 'https://momentjs.com/docs/#/displaying/format/',
+        })
+        frag.createEl('br')
+        frag.appendText('Your current syntax looks like this: ')
+        previewEl = frag.createEl('b', { cls: 'u-pop' })
+      }))
+      .addText(text => text
+        .setPlaceholder('YYYY-MM-DD')
+        .setValue(this.plugin.settings.fileNameFormat || 'YYYY-MM-DD')
+        .onChange(async (value) => {
+          this.plugin.settings.fileNameFormat = value
+          await this.plugin.saveSettings()
+          updatePreviewDisplay(previewEl, value)
+        }),
+      )
+
+    // Initial preview display
+    const currentValue = this.plugin.settings.fileNameFormat || ''
+    updatePreviewDisplay(previewEl!, currentValue)
+
+    function updatePreviewDisplay(container: HTMLElement, template: string) {
+      const previewText = dayjs().format(template || 'YYYY-MM-DD')
+      container.textContent = `${previewText}.md`
+    }
+  }
+
   private addStartDateSetting() {
     return new Setting(this.containerEl)
       .setName('Start date')
       .setDesc('Starting date for history note creation. This automatically updates to today after sync.')
       .addText(text => text
         .setPlaceholder('Example: 2025-01-01')
-        .setValue(this.plugin.settings.fromDate || format(startOfToday(), 'yyyy-MM-dd'))
+        .setValue(this.plugin.settings.fromDate || dayjs().startOf('day').format('YYYY-MM-DD'))
         .onChange(async (value) => {
           this.plugin.settings.fromDate = value
           await this.plugin.saveSettings()

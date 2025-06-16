@@ -1,6 +1,6 @@
 import type { App, TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { addDays, differenceInDays, format, startOfDay, startOfToday, subDays } from 'date-fns'
+import { dayjs } from './dayjs'
 import { DBClient } from './db'
 import { log, notify } from './utils'
 
@@ -40,12 +40,12 @@ export class BrowserHistory {
     if (!loaded)
       return
 
-    const today = startOfToday()
+    const today = dayjs().startOf('day').toDate()
     const _fromDate = this.plugin.settings.fromDate
     const fromDate = _fromDate ? new Date(`${_fromDate} 00:00:00`) : today
-    const dayCount = differenceInDays(today, fromDate) + 1
+    const dayCount = dayjs(today).diff(fromDate, 'day') + 1
     const dates = Array.from({ length: dayCount })
-      .map((_, i) => subDays(today, i))
+      .map((_, i) => dayjs(today).subtract(i, 'day').toDate())
     const files: TFile[] = []
 
     for (const date of dates) {
@@ -54,7 +54,7 @@ export class BrowserHistory {
         files.push(path)
     }
 
-    this.plugin.settings.fromDate = format(today, 'yyyy-MM-dd')
+    this.plugin.settings.fromDate = dayjs(today).format('YYYY-MM-DD')
     await this.plugin.saveSettings()
     log(`synced ${files.length} notes`)
     return files
@@ -71,7 +71,7 @@ export class BrowserHistory {
 
   async _syncNote(options?: CreateDailyNoteOptions) {
     const { date, load } = {
-      date: startOfDay(new Date()),
+      date: dayjs().startOf('day').toDate(),
       load: true,
       ...options,
     }
@@ -79,22 +79,23 @@ export class BrowserHistory {
     if (load)
       await this._load()
 
-    const title = format(date, 'yyyy-MM-dd')
-    const path = [this.plugin.settings.folderPath, `${title}.md`].join('/')
+    const template = this.plugin.settings.fileNameFormat || 'YYYY-MM-DD'
+    const fileName = dayjs(date).format(template)
+    const path = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
 
     const records = this.db.getUrls({
       fromDate: date,
-      toDate: addDays(date, 1),
+      toDate: dayjs(date).add(1, 'day').toDate(),
     })
 
     // return if no history
     if (!records.length) {
-      log(`no history for ${title}`)
+      log(`no history for ${fileName}`)
       return
     }
 
     const content = records.map((v) => {
-      const timestamp = format(new Date(v.visit_time as number), 'HH:mm')
+      const timestamp = dayjs(v.visit_time as number).format('HH:mm')
       return `- ${timestamp} [${v.title}](${v.url})`
     }).join('\n')
 
