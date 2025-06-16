@@ -21,13 +21,19 @@ Sync your browser history to notes.
 ## Settings
 
 ### Database Location
-Path to your browser history database file.
+Path to your browser history database file. Select your browser to automatically set the database path.
 
 ### Check Connection
 Test the connection to your browser history database.
 
 ### New File Location
 Directory where your browser history notes will be saved. **Warning**: Please select a different folder than your daily notes to avoid any conflicts. Default: `Browser History`
+
+### File Name Format
+Examples:
+- `YYYY-MM-DD` (default) → `2025-06-16.md`
+- `[Browser History] YYYY-MM-DD` → `Browser History 2025-06-16.md`
+For more syntax, refer to [format reference](https://momentjs.com/docs/#/displaying/format/)
 
 ### Start Date
 Starting date for history note creation. This automatically updates to today after each sync.
