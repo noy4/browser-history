@@ -4,6 +4,9 @@ import { dayjs } from './dayjs'
 import { DBClient } from './db'
 import { log, notify } from './utils'
 
+/**
+ * Loads the browser history database.
+ */
 export async function loadDB(plugin: BrowserHistoryPlugin) {
   try {
     return plugin.db = await DBClient.load({
@@ -15,6 +18,9 @@ export async function loadDB(plugin: BrowserHistoryPlugin) {
   }
 }
 
+/**
+ * Syncs browser history notes for the specified date range.
+ */
 export async function syncNotes(plugin: BrowserHistoryPlugin) {
   const db = await loadDB(plugin)
   if (!db)
@@ -40,6 +46,9 @@ export async function syncNotes(plugin: BrowserHistoryPlugin) {
   return files
 }
 
+/**
+ * Syncs a single history note.
+ */
 async function syncNote(plugin: BrowserHistoryPlugin, date?: Date) {
   try {
     return await _syncNote(plugin, date)
@@ -49,6 +58,9 @@ async function syncNote(plugin: BrowserHistoryPlugin, date?: Date) {
   }
 }
 
+/**
+ * _Syncs a single history note.
+ */
 async function _syncNote(
   plugin: BrowserHistoryPlugin,
   date = dayjs().startOf('day').toDate(),
@@ -76,6 +88,9 @@ async function _syncNote(
   return upsertFile(plugin, { filePath, content })
 }
 
+/**
+ * Tests database connection.
+ */
 export async function checkConnection(plugin: BrowserHistoryPlugin) {
   const db = await loadDB(plugin)
   if (!db)
@@ -91,6 +106,9 @@ export async function checkConnection(plugin: BrowserHistoryPlugin) {
   notify(message)
 }
 
+/**
+ * Opens today's browser history note.
+ */
 export async function openTodayHistory(
   plugin: BrowserHistoryPlugin,
   newLeaf?: boolean,
@@ -108,6 +126,9 @@ export async function openTodayHistory(
     notify('No history for today.')
 }
 
+/**
+ * Creates or updates a file with the specified content.
+ */
 async function upsertFile(
   plugin: BrowserHistoryPlugin,
   params: {
