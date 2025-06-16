@@ -4,10 +4,6 @@ import { dayjs } from './dayjs'
 import { DBClient } from './db'
 import { log, notify } from './utils'
 
-interface CreateDailyNoteOptions {
-  date?: Date
-}
-
 export class BrowserHistory {
   plugin: BrowserHistoryPlugin
   app: App
@@ -44,7 +40,7 @@ export class BrowserHistory {
     const files: TFile[] = []
 
     for (const date of dates) {
-      const path = await this.syncNote({ date })
+      const path = await this.syncNote(date)
       if (path)
         files.push(path)
     }
@@ -55,18 +51,18 @@ export class BrowserHistory {
     return files
   }
 
-  async syncNote(options?: CreateDailyNoteOptions) {
+  async syncNote(date?: Date) {
     try {
-      return await this._syncNote(options)
+      return await this._syncNote(date)
     }
     catch (e) {
       notify(e)
     }
   }
 
-  async _syncNote(options?: CreateDailyNoteOptions) {
-    const { date = dayjs().startOf('day').toDate() } = options || {}
-
+  async _syncNote(
+    date = dayjs().startOf('day').toDate(),
+  ) {
     const template = this.plugin.settings.fileNameFormat || 'YYYY-MM-DD'
     const fileName = dayjs(date).format(template)
     const filePath = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
