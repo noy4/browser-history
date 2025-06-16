@@ -1,4 +1,3 @@
-import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
@@ -22,9 +21,8 @@ export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
 export class BrowserHistorySettingTab extends PluginSettingTab {
   plugin: BrowserHistoryPlugin
 
-  constructor(app: App, plugin: BrowserHistoryPlugin) {
-    super(app, plugin)
-    this.plugin = plugin
+  constructor(plugin: BrowserHistoryPlugin) {
+    super(plugin.app, plugin)
   }
 
   display() {

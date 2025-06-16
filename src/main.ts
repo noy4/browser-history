@@ -17,7 +17,7 @@ export default class BrowserHistoryPlugin extends Plugin {
       'Open today\'s browser history',
       e => openTodayHistory(this, e.metaKey),
     )
-    this.addSettingTab(new BrowserHistorySettingTab(this.app, this))
+    this.addSettingTab(new BrowserHistorySettingTab(this))
 
     // sync on startup
     this.app.workspace.onLayoutReady(() => {
