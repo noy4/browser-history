@@ -1,9 +1,8 @@
 import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
-import { format, startOfToday } from 'date-fns'
-import dayjs from 'dayjs'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
+import { dayjs } from './dayjs'
 import { notify } from './utils'
 
 export interface BrowserHistoryPluginSettings {
@@ -95,7 +94,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
           const count = this.plugin.history.db.getUrlCount().toLocaleString()
           const data = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
           const oldestDate = data
-            ? format(new Date(data.visit_time as number), 'yyyy-MM-dd')
+            ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
             : ''
 
           const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
@@ -160,7 +159,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       .setDesc('Starting date for history note creation. This automatically updates to today after sync.')
       .addText(text => text
         .setPlaceholder('Example: 2025-01-01')
-        .setValue(this.plugin.settings.fromDate || format(startOfToday(), 'yyyy-MM-dd'))
+        .setValue(this.plugin.settings.fromDate || dayjs().startOf('day').format('YYYY-MM-DD'))
         .onChange(async (value) => {
           this.plugin.settings.fromDate = value
           await this.plugin.saveSettings()
