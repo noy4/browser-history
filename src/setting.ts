@@ -1,7 +1,7 @@
-import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
+import { checkConnection, syncNotes } from './commands'
 import { dayjs } from './dayjs'
 import { notify } from './utils'
 
@@ -21,9 +21,8 @@ export const DEFAULT_SETTINGS: BrowserHistoryPluginSettings = {
 export class BrowserHistorySettingTab extends PluginSettingTab {
   plugin: BrowserHistoryPlugin
 
-  constructor(app: App, plugin: BrowserHistoryPlugin) {
-    super(app, plugin)
-    this.plugin = plugin
+  constructor(plugin: BrowserHistoryPlugin) {
+    super(plugin.app, plugin)
   }
 
   display() {
@@ -86,20 +85,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       .addButton(button => button
         .setButtonText('Check')
         .setCta()
-        .onClick(async () => {
-          const loaded = await this.plugin.history.load()
-          if (!loaded)
-            return
-
-          const count = this.plugin.history.db.getUrlCount().toLocaleString()
-          const data = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
-          const oldestDate = data
-            ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
-            : ''
-
-          const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
-          notify(message)
-        }))
+        .onClick(() => checkConnection(this.plugin)))
   }
 
   private addFileLocationSetting() {
@@ -175,7 +161,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
         .setButtonText('Sync')
         .setCta()
         .onClick(async () => {
-          const files = await this.plugin.history.syncNotes()
+          const files = await syncNotes(this.plugin)
           if (!files)
             return
 
@@ -222,7 +208,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
 
               this.plugin.autoSyncId = this.plugin.registerInterval(
                 window.setInterval(() => {
-                  this.plugin.history.syncNotes()
+                  syncNotes(this.plugin)
                 }, ms),
               )
             }

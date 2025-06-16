@@ -1,12 +1,13 @@
+import type { DBClient } from './db'
 import type { BrowserHistoryPluginSettings } from './setting'
 import { Plugin } from 'obsidian'
-import { BrowserHistory } from './browser-history'
+import { openTodayHistory, syncNotes } from './commands'
 import { BrowserHistorySettingTab, DEFAULT_SETTINGS } from './setting'
 
 export default class BrowserHistoryPlugin extends Plugin {
   settings: BrowserHistoryPluginSettings
-  history = new BrowserHistory(this)
   autoSyncId: number | undefined
+  db: DBClient
 
   async onload() {
     await this.loadSettings()
@@ -14,20 +15,20 @@ export default class BrowserHistoryPlugin extends Plugin {
     this.addRibbonIcon(
       'history',
       'Open today\'s browser history',
-      this.history.onClickRibbon,
+      e => openTodayHistory(this, e.metaKey),
     )
-    this.addSettingTab(new BrowserHistorySettingTab(this.app, this))
+    this.addSettingTab(new BrowserHistorySettingTab(this))
 
     // sync on startup
     this.app.workspace.onLayoutReady(() => {
       if (this.settings.syncOnStartup)
-        this.history.syncNotes()
+        syncNotes(this)
     })
 
     // auto sync
     if ((this.settings.autoSyncMs || -1) > 0) {
       this.autoSyncId = this.registerInterval(window.setInterval(() => {
-        this.history.syncNotes()
+        syncNotes(this)
       }, this.settings.autoSyncMs))
     }
   }
