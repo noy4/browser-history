@@ -1,4 +1,4 @@
-import type { App, TFile } from 'obsidian'
+import type { TFile } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { dayjs } from './dayjs'
 import { DBClient } from './db'
@@ -15,72 +15,65 @@ export async function loadDB(plugin: BrowserHistoryPlugin) {
   }
 }
 
-export class BrowserHistory {
-  plugin: BrowserHistoryPlugin
+export async function syncNotes(plugin: BrowserHistoryPlugin) {
+  const db = await loadDB(plugin)
+  if (!db)
+    return
 
-  constructor(plugin: BrowserHistoryPlugin) {
-    this.plugin = plugin
+  const today = dayjs().startOf('day').toDate()
+  const _fromDate = plugin.settings.fromDate
+  const fromDate = _fromDate ? new Date(`${_fromDate} 00:00:00`) : today
+  const dayCount = dayjs(today).diff(fromDate, 'day') + 1
+  const dates = Array.from({ length: dayCount })
+    .map((_, i) => dayjs(today).subtract(i, 'day').toDate())
+  const files: TFile[] = []
+
+  for (const date of dates) {
+    const path = await syncNote(plugin, date)
+    if (path)
+      files.push(path)
   }
 
-  async syncNotes() {
-    const db = await loadDB(this.plugin)
-    if (!db)
-      return
+  plugin.settings.fromDate = dayjs(today).format('YYYY-MM-DD')
+  await plugin.saveSettings()
+  log(`synced ${files.length} notes`)
+  return files
+}
 
-    const today = dayjs().startOf('day').toDate()
-    const _fromDate = this.plugin.settings.fromDate
-    const fromDate = _fromDate ? new Date(`${_fromDate} 00:00:00`) : today
-    const dayCount = dayjs(today).diff(fromDate, 'day') + 1
-    const dates = Array.from({ length: dayCount })
-      .map((_, i) => dayjs(today).subtract(i, 'day').toDate())
-    const files: TFile[] = []
+async function syncNote(plugin: BrowserHistoryPlugin, date?: Date) {
+  try {
+    return await _syncNote(plugin, date)
+  }
+  catch (e) {
+    notify(e)
+  }
+}
 
-    for (const date of dates) {
-      const path = await this.syncNote(date)
-      if (path)
-        files.push(path)
-    }
+async function _syncNote(
+  plugin: BrowserHistoryPlugin,
+  date = dayjs().startOf('day').toDate(),
+) {
+  const template = plugin.settings.fileNameFormat || 'YYYY-MM-DD'
+  const fileName = dayjs(date).format(template)
+  const filePath = [plugin.settings.folderPath, `${fileName}.md`].join('/')
 
-    this.plugin.settings.fromDate = dayjs(today).format('YYYY-MM-DD')
-    await this.plugin.saveSettings()
-    log(`synced ${files.length} notes`)
-    return files
+  const records = plugin.db.getUrls({
+    fromDate: date,
+    toDate: dayjs(date).add(1, 'day').toDate(),
+  })
+
+  // return if no history
+  if (!records.length) {
+    log(`no history for ${fileName}`)
+    return
   }
 
-  async syncNote(date?: Date) {
-    try {
-      return await this._syncNote(date)
-    }
-    catch (e) {
-      notify(e)
-    }
-  }
+  const content = records.map((v) => {
+    const timestamp = dayjs(v.visit_time as number).format('HH:mm')
+    return `- ${timestamp} [${v.title}](${v.url})`
+  }).join('\n')
 
-  async _syncNote(
-    date = dayjs().startOf('day').toDate(),
-  ) {
-    const template = this.plugin.settings.fileNameFormat || 'YYYY-MM-DD'
-    const fileName = dayjs(date).format(template)
-    const filePath = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
-
-    const records = this.plugin.db.getUrls({
-      fromDate: date,
-      toDate: dayjs(date).add(1, 'day').toDate(),
-    })
-
-    // return if no history
-    if (!records.length) {
-      log(`no history for ${fileName}`)
-      return
-    }
-
-    const content = records.map((v) => {
-      const timestamp = dayjs(v.visit_time as number).format('HH:mm')
-      return `- ${timestamp} [${v.title}](${v.url})`
-    }).join('\n')
-
-    return upsertFile(this.plugin, { filePath, content })
-  }
+  return upsertFile(plugin, { filePath, content })
 }
 
 export async function checkConnection(plugin: BrowserHistoryPlugin) {
@@ -102,12 +95,12 @@ export async function openTodayHistory(
   plugin: BrowserHistoryPlugin,
   newLeaf?: boolean,
 ) {
-  const { app, history } = plugin
+  const { app } = plugin
   const db = await loadDB(plugin)
   if (!db)
     return
 
-  const todayFile = await history.syncNote()
+  const todayFile = await syncNote(plugin)
 
   if (todayFile)
     app.workspace.getLeaf(newLeaf).openFile(todayFile)

@@ -1,12 +1,11 @@
+import type { DBClient } from './db'
 import type { BrowserHistoryPluginSettings } from './setting'
 import { Plugin } from 'obsidian'
-import { BrowserHistory, openTodayHistory } from './browser-history'
+import { openTodayHistory, syncNotes } from './browser-history'
 import { BrowserHistorySettingTab, DEFAULT_SETTINGS } from './setting'
-import { DBClient } from './db'
 
 export default class BrowserHistoryPlugin extends Plugin {
   settings: BrowserHistoryPluginSettings
-  history = new BrowserHistory(this)
   autoSyncId: number | undefined
   db: DBClient
 
@@ -23,13 +22,13 @@ export default class BrowserHistoryPlugin extends Plugin {
     // sync on startup
     this.app.workspace.onLayoutReady(() => {
       if (this.settings.syncOnStartup)
-        this.history.syncNotes()
+        syncNotes(this)
     })
 
     // auto sync
     if ((this.settings.autoSyncMs || -1) > 0) {
       this.autoSyncId = this.registerInterval(window.setInterval(() => {
-        this.history.syncNotes()
+        syncNotes(this)
       }, this.settings.autoSyncMs))
     }
   }

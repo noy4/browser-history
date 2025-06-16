@@ -2,7 +2,7 @@ import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
-import { checkConnection } from './browser-history'
+import { checkConnection, syncNotes } from './browser-history'
 import { dayjs } from './dayjs'
 import { notify } from './utils'
 
@@ -163,7 +163,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
         .setButtonText('Sync')
         .setCta()
         .onClick(async () => {
-          const files = await this.plugin.history.syncNotes()
+          const files = await syncNotes(this.plugin)
           if (!files)
             return
 
@@ -210,7 +210,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
 
               this.plugin.autoSyncId = this.plugin.registerInterval(
                 window.setInterval(() => {
-                  this.plugin.history.syncNotes()
+                  syncNotes(this.plugin)
                 }, ms),
               )
             }
