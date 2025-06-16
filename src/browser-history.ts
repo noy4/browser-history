@@ -20,18 +20,14 @@ export class BrowserHistory {
 
   async load() {
     try {
-      await this._load()
+      this.db = await DBClient.load({
+        sqlitePath: this.plugin.settings.sqlitePath || '',
+      })
       return true
     }
     catch (e) {
       notify(`Failed to load: ${e}`)
     }
-  }
-
-  async _load() {
-    this.db = await DBClient.load({
-      sqlitePath: this.plugin.settings.sqlitePath || '',
-    })
   }
 
   async syncNotes() {
