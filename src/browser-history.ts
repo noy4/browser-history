@@ -81,7 +81,7 @@ export class BrowserHistory {
 
     const template = this.plugin.settings.fileNameFormat || 'YYYY-MM-DD'
     const fileName = dayjs(date).format(template)
-    const path = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
+    const filePath = [this.plugin.settings.folderPath, `${fileName}.md`].join('/')
 
     const records = this.db.getUrls({
       fromDate: date,
@@ -99,27 +99,7 @@ export class BrowserHistory {
       return `- ${timestamp} [${v.title}](${v.url})`
     }).join('\n')
 
-    return this.upsertFile(path, content)
-  }
-
-  async upsertFile(path: string, data: string) {
-    const paths = path.split('/')
-    const _fileName = paths.pop()
-    const folderPath = paths.join('/')
-
-    // create folder if it doesn't exist
-    if (folderPath) {
-      const folder = this.app.vault.getFolderByPath(folderPath)
-      if (!folder)
-        await this.app.vault.createFolder(folderPath)
-    }
-
-    let file = this.app.vault.getFileByPath(path)
-    if (!file)
-      file = await this.app.vault.create(path, data)
-    else
-      await this.app.vault.modify(file, data)
-    return file
+    return upsertFile(this.app, { filePath, content })
   }
 
   onClickRibbon = async (e: MouseEvent) => {
@@ -131,4 +111,28 @@ export class BrowserHistory {
     else
       notify('No history for today.')
   }
+}
+
+async function upsertFile(app: App, params: {
+  filePath: string
+  content: string
+}) {
+  const { filePath, content } = params
+  const paths = filePath.split('/')
+  const _fileName = paths.pop()
+  const folderPath = paths.join('/')
+
+  // create folder if it doesn't exist
+  if (folderPath) {
+    const folder = app.vault.getFolderByPath(folderPath)
+    if (!folder)
+      await app.vault.createFolder(folderPath)
+  }
+
+  let file = app.vault.getFileByPath(filePath)
+  if (!file)
+    file = await app.vault.create(filePath, content)
+  else
+    await app.vault.modify(file, content)
+  return file
 }
