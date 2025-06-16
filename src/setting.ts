@@ -2,6 +2,7 @@ import type { App } from 'obsidian'
 import type BrowserHistoryPlugin from './main'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
+import { checkConnection } from './browser-history'
 import { dayjs } from './dayjs'
 import { notify } from './utils'
 
@@ -86,20 +87,7 @@ export class BrowserHistorySettingTab extends PluginSettingTab {
       .addButton(button => button
         .setButtonText('Check')
         .setCta()
-        .onClick(async () => {
-          const loaded = await this.plugin.history.load()
-          if (!loaded)
-            return
-
-          const count = this.plugin.history.db.getUrlCount().toLocaleString()
-          const data = this.plugin.history.db.getUrls({ limit: 1, desc: false }).at(0)
-          const oldestDate = data
-            ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
-            : ''
-
-          const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
-          notify(message)
-        }))
+        .onClick(() => checkConnection(this.plugin)))
   }
 
   private addFileLocationSetting() {

@@ -91,17 +91,32 @@ export class BrowserHistory {
   }
 }
 
+export async function checkConnection(plugin: BrowserHistoryPlugin) {
+  const { history } = plugin
+  const loaded = await history.load()
+  if (!loaded)
+    return
+
+  const count = history.db.getUrlCount().toLocaleString()
+  const data = history.db.getUrls({ limit: 1, desc: false }).at(0)
+  const oldestDate = data
+    ? dayjs(data.visit_time as number).format('YYYY-MM-DD')
+    : ''
+
+  const message = `Successfully connected. ${count} records found${count ? ` (oldest: ${oldestDate})` : ''}`
+  notify(message)
+}
+
 export async function openTodayHistory(
   plugin: BrowserHistoryPlugin,
   newLeaf?: boolean,
 ) {
-  const { app } = plugin
-  const loaded = await plugin.history.load()
-
+  const { app, history } = plugin
+  const loaded = await history.load()
   if (!loaded)
     return
 
-  const todayFile = await plugin.history.syncNote()
+  const todayFile = await history.syncNote()
 
   if (todayFile)
     app.workspace.getLeaf(newLeaf).openFile(todayFile)
