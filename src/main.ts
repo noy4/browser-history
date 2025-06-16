@@ -1,7 +1,7 @@
 import type { DBClient } from './db'
 import type { BrowserHistoryPluginSettings } from './setting'
 import { Plugin } from 'obsidian'
-import { openTodayHistory, syncNotes } from './browser-history'
+import { openTodayHistory, syncNotes } from './commands'
 import { BrowserHistorySettingTab, DEFAULT_SETTINGS } from './setting'
 
 export default class BrowserHistoryPlugin extends Plugin {

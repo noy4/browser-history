@@ -1,7 +1,7 @@
 import type BrowserHistoryPlugin from './main'
 import { PluginSettingTab, Setting } from 'obsidian'
 import { BrowserType, detectBrowserType, getDefaultBrowserPath } from './browser'
-import { checkConnection, syncNotes } from './browser-history'
+import { checkConnection, syncNotes } from './commands'
 import { dayjs } from './dayjs'
 import { notify } from './utils'
 
