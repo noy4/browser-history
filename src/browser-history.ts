@@ -6,7 +6,6 @@ import { log, notify } from './utils'
 
 interface CreateDailyNoteOptions {
   date?: Date
-  load?: boolean
 }
 
 export class BrowserHistory {
@@ -49,7 +48,7 @@ export class BrowserHistory {
     const files: TFile[] = []
 
     for (const date of dates) {
-      const path = await this.syncNote({ date, load: false })
+      const path = await this.syncNote({ date })
       if (path)
         files.push(path)
     }
@@ -70,14 +69,7 @@ export class BrowserHistory {
   }
 
   async _syncNote(options?: CreateDailyNoteOptions) {
-    const { date, load } = {
-      date: dayjs().startOf('day').toDate(),
-      load: true,
-      ...options,
-    }
-
-    if (load)
-      await this._load()
+    const { date = dayjs().startOf('day').toDate() } = options || {}
 
     const template = this.plugin.settings.fileNameFormat || 'YYYY-MM-DD'
     const fileName = dayjs(date).format(template)
@@ -108,6 +100,11 @@ export async function openTodayHistory(
   newLeaf?: boolean,
 ) {
   const { app } = plugin
+  const loaded = await plugin.history.load()
+
+  if (!loaded)
+    return
+
   const todayFile = await plugin.history.syncNote()
 
   if (todayFile)
