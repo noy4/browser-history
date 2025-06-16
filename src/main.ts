@@ -1,6 +1,6 @@
 import type { BrowserHistoryPluginSettings } from './setting'
 import { Plugin } from 'obsidian'
-import { BrowserHistory } from './browser-history'
+import { BrowserHistory, openTodayHistory } from './browser-history'
 import { BrowserHistorySettingTab, DEFAULT_SETTINGS } from './setting'
 
 export default class BrowserHistoryPlugin extends Plugin {
@@ -14,7 +14,7 @@ export default class BrowserHistoryPlugin extends Plugin {
     this.addRibbonIcon(
       'history',
       'Open today\'s browser history',
-      this.history.onClickRibbon,
+      e => openTodayHistory(this, e.metaKey),
     )
     this.addSettingTab(new BrowserHistorySettingTab(this.app, this))
 

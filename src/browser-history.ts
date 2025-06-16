@@ -99,24 +99,31 @@ export class BrowserHistory {
       return `- ${timestamp} [${v.title}](${v.url})`
     }).join('\n')
 
-    return upsertFile(this.app, { filePath, content })
-  }
-
-  onClickRibbon = async (e: MouseEvent) => {
-    const files = await this.syncNotes()
-    const todayFile = files?.at(0)
-
-    if (todayFile)
-      this.app.workspace.getLeaf(e.metaKey).openFile(todayFile)
-    else
-      notify('No history for today.')
+    return upsertFile(this.plugin, { filePath, content })
   }
 }
 
-async function upsertFile(app: App, params: {
-  filePath: string
-  content: string
-}) {
+export async function openTodayHistory(
+  plugin: BrowserHistoryPlugin,
+  newLeaf?: boolean,
+) {
+  const { app } = plugin
+  const todayFile = await plugin.history.syncNote()
+
+  if (todayFile)
+    app.workspace.getLeaf(newLeaf).openFile(todayFile)
+  else
+    notify('No history for today.')
+}
+
+async function upsertFile(
+  plugin: BrowserHistoryPlugin,
+  params: {
+    filePath: string
+    content: string
+  },
+) {
+  const { app } = plugin
   const { filePath, content } = params
   const paths = filePath.split('/')
   const _fileName = paths.pop()
